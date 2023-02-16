@@ -5,7 +5,7 @@
 (local await {:fs_access  (a.wrap uv.fs_access 3 true)
               :fs_scandir (a.wrap uv.fs_scandir 2 true)})
 
-(fn scandir [path ?opts callback]
+(fn scandir-async [path ?opts callback]
   "Scan directory recursively and asynchronously.
 
   Parameters:
@@ -77,9 +77,9 @@
     (parse-dir-async path 1)
     (callback output)))
 
-(local scandir (a.create scandir 3 true))
-(local scandir (a.wrap scandir 3 true))
+(local scandir-async (a.create scandir-async 3 true))
+(local scandir-async (a.wrap scandir-async 3 true))
 
-scandir
+scandir-async
 
 

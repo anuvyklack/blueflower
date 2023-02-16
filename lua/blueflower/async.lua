@@ -1,3 +1,4 @@
+local lua_unpack = unpack
 local handles = setmetatable({}, {__mode = "k"})
 local function running_3f()
   local thread = coroutine.running()
@@ -50,15 +51,16 @@ local function run(func, callback, ...)
     local nargs = _let_9_[2]
     local fun = _let_9_[3]
     local ret = _let_9_
-    local args = {select(4, unpack(ret))}
+    local args = {select(4, lua_unpack(ret, 1, table.maxn(ret)))}
     if not ok then
+      print(string.format("The coroutine failed with this message:\n%s\n%s", ret[2], debug.traceback(thread)))
       error(string.format("The coroutine failed with this message:\n%s\n%s", ret[2], debug.traceback(thread)))
     else
     end
     local _11_ = coroutine.status(thread)
     if (_11_ == "dead") then
       if callback then
-        return callback(unpack(ret, 4, table.maxn(ret)))
+        return callback(lua_unpack(ret, 4, table.maxn(ret)))
       else
         return nil
       end
@@ -66,7 +68,7 @@ local function run(func, callback, ...)
       local _ = _11_
       assert((type(fun) == "function"), "type error :: expected func")
       do end (args)[nargs] = step
-      local r = fun(unpack(args))
+      local r = fun(lua_unpack(args, 1, table.maxn(args)))
       if Async_T_3f(r) then
         handle._current = r
         return nil
@@ -92,7 +94,7 @@ local function _wait(argc, func, ...)
     local function _16_(err)
       return callback(false, err, debug.traceback())
     end
-    return xpcall(func, _16_, unpack(args, 1, argc))
+    return xpcall(func, _16_, lua_unpack(args, 1, argc))
   end
   local _let_17_ = {coroutine.yield(argc, pfunc, ...)}
   local ok = _let_17_[1]
@@ -102,10 +104,11 @@ local function _wait(argc, func, ...)
     local _ = _let_18_[1]
     local err = _let_18_[2]
     local traceback = _let_18_[3]
+    print(string.format("Wrapped function failed: %s\n%s", err, traceback))
     error(string.format("Wrapped function failed: %s\n%s", err, traceback))
   else
   end
-  return unpack(ret, 2, table.maxn(ret))
+  return lua_unpack(ret, 2, table.maxn(ret))
 end
 local function wait(...)
   local _20_ = type(...)
@@ -130,7 +133,7 @@ local function create(func, _3fargc, _3fstrict)
       return func(...)
     else
       local callback = select((argc + 1), ...)
-      return run(func, callback, unpack({...}, 1, argc))
+      return run(func, callback, lua_unpack({...}, 1, argc))
     end
   end
   return _22_
@@ -143,10 +146,9 @@ local function void(func, _3fstrict)
         error("This function must run in a non-async context")
       else
       end
-      func(...)
-      return run(func, nil, ...)
+      return func(...)
     else
-      return nil
+      return run(func, nil, ...)
     end
   end
   return _25_
@@ -171,7 +173,7 @@ local function join(thunks, n, _3finterrupt_check)
     if (0 == #thunks) then
       return finish()
     else
-      local remaining = {select((n + 1), unpack(thunks))}
+      local remaining = {select((n + 1), lua_unpack(thunks, 1, table.maxn(thunks)))}
       local to_go = #thunks
       local ret = {}
       local callback
@@ -201,4 +203,16 @@ local function join(thunks, n, _3finterrupt_check)
     return wait(1, false, run0)
   end
 end
-return {running = running_3f, run = run, wait = wait, create = create, void = void, wrap = wrap, curry = curry, scheduler = wrap(vim.schedule, 1, false)}
+local function curry(fun, ...)
+  local args = {...}
+  local nargs = select("#", ...)
+  local function _35_(...)
+    local other = {...}
+    for i = 1, select("#", ...) do
+      args[(nargs + i)] = other[i]
+    end
+    return fun(lua_unpack(args, 1, table.maxn(args)))
+  end
+  return _35_
+end
+return {running = running_3f, run = run, wait = wait, create = create, void = void, wrap = wrap, join = join, curry = curry, scheduler = wrap(vim.schedule, 1, false)}

@@ -58,20 +58,21 @@
         stderr-data []
         stdin  (when input (uv.new_pipe))
         stdout (uv.new_pipe)
-        stderr (uv.new_pipe)
-        (handle pid) (uv.spawn cmd
-                               {: args
-                                :stdio [stdin stdout stderr]
-                                : cwd}
-                               (fn [code signal]
-                                 (handle:close)
-                                 (stdout:read_stop)
-                                 (stderr:read_stop)
-                                 (close-pipes stdin stdout stderr)
-                                 (callback code
-                                           signal
-                                           (if (< 0 (length stdout-data)) stdout-data)
-                                           (if (< 0 (length stderr-data)) stderr-data))))]
+        stderr (uv.new_pipe)]
+    (var (handle pid) (nil nil))
+    (set (handle pid) (uv.spawn cmd
+                                {: args
+                                 :stdio [stdin stdout stderr]
+                                 : cwd}
+                                (fn [code signal]
+                                  (handle:close)
+                                  (stdout:read_stop)
+                                  (stderr:read_stop)
+                                  (close-pipes stdin stdout stderr)
+                                  (callback code
+                                            signal
+                                            (if (< 0 (length stdout-data)) stdout-data)
+                                            (if (< 0 (length stderr-data)) stderr-data)))))
     (when (not handle)
       (close-pipes stdin stdout stderr)
       (error (debug.traceback (.. "Failed to spawn process: "

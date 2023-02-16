@@ -4,7 +4,7 @@ local _local_1_ = require("blueflower.debug")
 local eprint = _local_1_["eprint"]
 local os_sep = "/"
 local await = {fs_access = a.wrap(uv.fs_access, 3, true), fs_scandir = a.wrap(uv.fs_scandir, 2, true)}
-local function scandir(path, _3fopts, callback)
+local function scandir_async(path, _3fopts, callback)
   local found_3f = false
   local _let_2_ = (_3fopts or {})
   local pattern = _let_2_["pattern"]
@@ -126,6 +126,6 @@ local function scandir(path, _3fopts, callback)
   parse_dir_async(path, 1)
   return callback(output)
 end
-local scandir0 = a.create(scandir, 3, true)
-local scandir1 = a.wrap(scandir0, 3, true)
-return scandir1
+local scandir_async0 = a.create(scandir_async, 3, true)
+local scandir_async1 = a.wrap(scandir_async0, 3, true)
+return scandir_async1

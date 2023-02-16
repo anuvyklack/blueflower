@@ -1,5 +1,14 @@
 ;;; This is rewritten in fennel https://github.com/lewis6991/async.nvim plugin.
 
+; (fn full-unpack [list ?i]
+;   (unpack list (or ?i 1) (table.maxn list)))
+
+(local lua-unpack unpack)
+(macro unpack [lst ?i ?j]
+  (let [i (or ?i 1)
+        j (or ?j `(table.maxn ,lst))]
+    `(lua-unpack ,lst ,i ,j)))
+
 ;; Store all the async threads in a weak table so we don't prevent them from
 ;; being garbage collected
 (local handles (setmetatable {} {:__mode "k"}))
@@ -60,18 +69,23 @@
 
   (fn step [...]
     (let [[ok nargs fun &as ret] [(coroutine.resume thread ...)]
-          args  [(select 4 (unpack ret))] ]
+          args [(select 4 (unpack ret))]
+          ]
       (when (not ok)
+        (print (string.format "The coroutine failed with this message:\n%s\n%s"
+                              (. ret 2) ; error message
+                              (debug.traceback thread)))
         (error (string.format "The coroutine failed with this message:\n%s\n%s"
                               (. ret 2) ; error message
-                              (debug.traceback thread))))
+                              (debug.traceback thread)))
+        )
       (match (coroutine.status thread)
         :dead (when callback
-                (callback (unpack ret 4 (table.maxn ret))))
+                (callback (unpack ret 4))
+                )
         _ (do
             (assert (= (type fun) :function) "type error :: expected func")
             (tset args nargs step)
-            ; (local r (fun (unpack args 1 nargs)))
             (let [r (fun (unpack args))]
               (when (Async_T? r)
                 (set handle._current r)))))))
@@ -99,8 +113,11 @@
   (let [ [ok &as ret] [(coroutine.yield argc pfunc ...)] ]
     (when (not ok)
       (let [[_ err traceback] ret]
-        (error (string.format "Wrapped function failed: %s\n%s" err traceback))))
-    (unpack ret 2 (table.maxn ret))))
+        (print (string.format "Wrapped function failed: %s\n%s" err traceback))
+        (error (string.format "Wrapped function failed: %s\n%s" err traceback))
+        ))
+    (unpack ret 2)
+    ))
 
 
 (fn wait [...]
@@ -159,11 +176,10 @@
   (vim.validate {:func [func :function]})
   (fn [...]
     (if (running?)
-        (do
-          (when ?strict (error "This function must run in a non-async context"))
-          (func ...)
+        (do (when ?strict (error "This function must run in a non-async context"))
+            (func ...))
         ;; else
-        (run func nil ...)))))
+        (run func nil ...))))
 
 
 (fn wrap [func argc ?strict]
@@ -223,11 +239,29 @@
       (wait 1 false run)))
 
 
+(fn curry [fun ...]
+  "Partially applying arguments to an async FUNCTION.
+
+  Parameters:
+    - FUN : function
+    - ... : any
+          Arguments to apply to FUN.
+  "
+  (local args [...])
+  (local nargs (select "#" ...))
+  (fn [...]
+    (local other [...])
+    (for [i 1 (select "#" ...)]
+      (tset args (+ nargs i) (. other i)))
+    (fun (unpack args))))
+
+
 {:running running?
  : run
  : wait
  : create
  : void
  : wrap
+ : join
  : curry
  :scheduler (wrap vim.schedule 1 false)}

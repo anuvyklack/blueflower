@@ -57,7 +57,7 @@ local function run_job(_8_, callback)
   end
   local stdout = uv.new_pipe()
   local stderr = uv.new_pipe()
-  local handle, pid = nil, nil
+  local handle, pid = nil(nil)
   local function _11_(code, signal)
     handle:close()
     stdout:read_stop()

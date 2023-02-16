@@ -21,6 +21,7 @@
  return (l.id == r.id) end
 
  Buffer["get-name"] = function(self)
+
  return api.nvim_buf_get_name(self.id) end
 
  Buffer.delete = function(self, _6_) local _arg_7_ = _6_ local force = _arg_7_["force"] local unload = _arg_7_["unload"]
@@ -39,7 +40,7 @@
  Buffer["get-option"] = function(self, name)
  return api.nvim_buf_get_option(self.id, name) end
 
- Buffer["set-optiona"] = function(self, name, value)
+ Buffer["set-option"] = function(self, name, value)
  return api.nvim_buf_set_option(self.id, name, value) end
 
  Buffer["line-count"] = function(self)

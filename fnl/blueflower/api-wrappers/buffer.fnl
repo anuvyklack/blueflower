@@ -21,6 +21,7 @@
   (= l.id r.id))
 
 (fn Buffer.get-name [self]
+  "Gets the full file name of the buffer."
   (api.nvim_buf_get_name self.id))
 
 (fn Buffer.delete [self {: force : unload}]
@@ -39,7 +40,7 @@
 (fn Buffer.get-option [self name]
   (api.nvim_buf_get_option self.id name))
 
-(fn Buffer.set-optiona [self name value]
+(fn Buffer.set-option [self name value]
    (api.nvim_buf_set_option self.id name value))
 
 (fn Buffer.line-count [self]
