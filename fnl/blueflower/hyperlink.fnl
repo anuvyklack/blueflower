@@ -1,28 +1,12 @@
+(local async (require :blueflower.async))
 (local ts (require :blueflower.treesitter))
 (local get-node-text vim.treesitter.query.get_node_text)
+(local scandir-async (require :blueflower.scandir))
 (import-macros {: do-until-true } "fnl.blueflower.macros")
 ; (import-macros {: do-until-true } "blueflower.macros")
-(local P vim.pretty_print)
+(local {: os-sep} (require :blueflower.config))
 (local {: getcwd : fnamemodify} vim.fn)
-(local os-sep "/")
-
-; (fn get-hyperlink-parent-node [?node]
-;   (let [node (or ?node (ts.current-node))
-;         type (node:type)]
-;     (match type
-;       :section          nil
-;       :tag              nil
-;       :list             nil
-;       :link             node
-;       :short_link       node
-;       :link_definition  node
-;       _ (let [parent (node:parent)]
-;           (when parent
-;             (get-hyperlink-parent-node parent))))))
-
-; (fn open-link [link]
-;   (P link)
-;   )
+(local P vim.pretty_print)
 
 ; file:shell::* Title
 
@@ -34,11 +18,28 @@
 ;       return path
 ;    end
 ;    path = path:gsub('^./', '')
-;    return vim.fn.fnamemodify(utils.current_file_path(), ':p:h') .. '/' .. path
+;    return fnamemodify(utils.current_file_path(), ':p:h') .. '/' .. path
 ; end
 
-(fn get-file-full-path [file]
-  (.. (fnamemodify (getcwd) ":p:h") os-sep file))
+; (fn get-file-full-path [file]
+;   (.. (fnamemodify (getcwd) ":p") os-sep file))
+
+
+(local find-hyperlink-file-async
+  (-> (fn [name callback]
+        (if (or (name:find "^/")
+                (name:find "^./"))
+          (callback (fnamemodify name ":p"))
+          ;else
+          (callback (scandir-async (getcwd) {:pattern name
+                                             :first-found? true})
+          ; (callback (-> (scandir-async (getcwd) {:pattern name :first-found? true})
+          ;               ; (. 1)
+          ;               ; (fnamemodify ":p")
+          ;               ))
+          )))
+      (async.create 2 true)
+      (async.wrap 2)))
 
 
 (fn open-file [path ?line-num]
@@ -50,54 +51,40 @@
       ; else
       (vim.cmd (string.format "edit %s" path))))
 
+(local open-hyperlink-at-cursor-async
+  (-> (fn []
+        "Open hyperlink at cursor."
+        ; (local node (get-hyperlink-parent-node))
+        (local node (ts.find-parent-node-of-type (ts.get-node-at-cursor)
+                                                 [:link :short_link :link_definition]))
+        (when node
+          (let [link (table.concat
+                       (icollect [_ line (ipairs (-> (node:field "target")
+                                                     (. 1)
+                                                     (ts.get-node-text)))]
+                         (vim.trim line))
+                       " ")]
+            (P link)
+            (do-until-true
+              (let [(file target) (link:match "^file:(.-)::(.*)$")]
+                (when file
+                  (P "^file:")
+                  (P (find-hyperlink-file-async file))
+                  true))
 
-(fn open-hyperlink-at-cursor []
-  "Open hyperlink at cursor."
-  ; (local node (get-hyperlink-parent-node))
-  (local node (ts.find-parent-node-of-type (ts.get-node-at-cursor)
-                                           [:link :short_link :link_definition]))
-  (when node
-    (let [link (table.concat
-                 (icollect [_ line (ipairs (-> (node:field "target")
-                                               (. 1)
-                                               (ts.get-node-text)))]
-                   (vim.trim line))
-                 " ")]
-      (P link)
-      (do-until-true
-        (let [(file target) (link:match "^file:(.-)::(.*)$")]
-          (when file
-            (P "^file:")
-            true))
+              (let [file (link:match "^file:(.*)$")]
+                (when file
+                  (P "^file:")
+                  (P (find-hyperlink-file-async file))
+                  true))
 
-        (let [file (link:match "^file:(.*)$")]
-          (when file
-            (P "^file:")
-            true))
-
-        (let [title (link:match "^%**")]
-          (when title
-            (P "title")
-            true)
-          ))
-      )))
-
-
-; (if (let [(file target) (link:match "^file:(.*)::(.*)$")]
-;       )
-;   )
+              (let [title (link:match "^%**")]
+                (when title
+                  (P "title")
+                  true)
+                ))
+            )))
+      (async.void)))
 
 
-; (macro do-until-true [form ...]
-;   "Accept a sequence of forms.  Execute first one. If it returns false, execute
-; second one. If it returns false, execute third one, and so on.  If any form
-; returns true, stop execution."
-;   `(,if ,form
-;      (if (not (,form))
-;          (,do-until-true ,...))))
-
-(macro do-until-true [form ...]
-  )
-
-
-{: open-hyperlink-at-cursor}
+{: open-hyperlink-at-cursor-async}

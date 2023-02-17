@@ -8,31 +8,31 @@
 
 ;; lua P(require("nvim-treesitter.ts_utils").get_node_at_cursor(vim.api.nvim_get_current_win()):field("target"))
 
-(fn _find-parent-node-any-of-types [node types]
+(fn impl-find-parent-node-any-of-types [node types]
   "Supplementary function for `find-parent-node-of-type`"
   (if (. types (node:type))
       node
       (let [parent (node:parent)]
         (when parent
-          (_find-parent-node-any-of-types parent types)))))
+          (impl-find-parent-node-any-of-types parent types)))))
 
 
-(fn _find-parent-node-of-type [node node-type]
+(fn impl-find-parent-node-of-type [node node-type]
   "Supplementary function for `find-parent-node-of-type'"
   (if (= (node:type) node-type)
       node
       (let [parent (node:parent)]
         (when parent
-          (_find-parent-node-of-type parent node-type)))))
+          (impl-find-parent-node-of-type parent node-type)))))
 
 
 (fn find-parent-node-of-type [node node-type]
   "Find the closest parent of passed NODE of the specific NODE-TYPE
   or list of types."
   (match (type node-type)
-    :table (_find-parent-node-any-of-types node (collect [_ ntype (ipairs node-type)]
+    :table (impl-find-parent-node-any-of-types node (collect [_ ntype (ipairs node-type)]
                                                   ntype true))
-    :string (_find-parent-node-of-type node node-type)))
+    :string (impl-find-parent-node-of-type node node-type)))
 
 ;; lua/orgmode/utils/init.lua :: utils.get_node_text
 
@@ -45,10 +45,4 @@
 {: get-node-at-cursor
  : find-parent-node-of-type
  : get-node-text}
-
-; (let [P  vim.pretty_print
-;       node  (M.current-node)]
-;   (P (node:sexpr))
-; )
-
 

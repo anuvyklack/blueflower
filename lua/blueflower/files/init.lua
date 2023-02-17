@@ -35,30 +35,26 @@ local function _6_(_4_)
 end
 autocmd("FileType", {pattern = "blueflower", group = group, desc = "Handle blueflower file loading", callback = _6_})
 local load_file_async
-do
-  local function afun(path, _3fcallback)
-    do
-      local _9_ = files[path]
-      if (nil ~= _9_) then
-        local file = _9_
-        file:refresh()
-      elseif (_9_ == nil) then
-        local content, stat = read_file_async(path)
-        if ("blueflower" == vim.filetype.match({filename = path, contents = content})) then
-          files[path] = File:new({path = path, content = content, stat = stat})
-        else
-        end
+local function _9_(path, _3fcallback)
+  do
+    local _10_ = files[path]
+    if (nil ~= _10_) then
+      local file = _10_
+      file:refresh()
+    elseif (_10_ == nil) then
+      local content, stat = read_file_async(path)
+      if ("blueflower" == vim.filetype.match({filename = path, contents = content})) then
+        files[path] = File:new({path = path, content = content, stat = stat})
       else
       end
-    end
-    if _3fcallback then
-      return _3fcallback()
     else
-      return nil
     end
   end
-  local afun0 = async.create(afun, 2, true)
-  local afun1 = async.wrap(afun0, 2)
-  load_file_async = afun1
+  if _3fcallback then
+    return _3fcallback()
+  else
+    return nil
+  end
 end
+load_file_async = async.wrap(async.create(_9_, 2, true), 2)
 return {files = files, ["load-file-async"] = load_file_async}

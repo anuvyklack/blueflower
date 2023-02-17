@@ -39,20 +39,17 @@
 
 
 (local load-file-async
-  (do
-    (fn afun [path ?callback]
-      (match (. files path)
-        file (file:refresh)
-        nil  (let [(content stat) (read-file-async path)]
-               (when (= "blueflower"
-                        (vim.filetype.match {:filename path :contents content}))
-                 (tset files path (File:new {: path : content : stat})))))
-      (when ?callback
-        (?callback)))
-
-    (local afun (async.create afun 2 true))
-    (local afun (async.wrap afun 2))
-    afun))
+  (-> (fn [path ?callback]
+        (match (. files path)
+          file (file:refresh)
+          nil  (let [(content stat) (read-file-async path)]
+                 (when (= "blueflower"
+                          (vim.filetype.match {:filename path :contents content}))
+                   (tset files path (File:new {: path : content : stat})))))
+        (when ?callback
+          (?callback)))
+      (async.create 2 true)
+      (async.wrap 2)))
 
 
 {: files

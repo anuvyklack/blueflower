@@ -2,12 +2,11 @@
 (local autocmd vim.api.nvim_create_autocmd)
 (local keymap vim.keymap)
 (local ts (require "blueflower/treesitter"))
-(local {: open-hyperlink-at-cursor} (require "blueflower/hyperlink"))
+(local {: open-hyperlink-at-cursor-async} (require "blueflower/hyperlink"))
 (local P vim.pretty_print)
 
 (fn set-keymaps []
-  (keymap.set :n :<CR> open-hyperlink-at-cursor)
-  )
+  (keymap.set :n :<CR> open-hyperlink-at-cursor-async))
 
 ; (fn set-keymaps []
 ;   (keymap.set :n :<CR>

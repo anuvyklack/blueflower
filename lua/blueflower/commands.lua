@@ -5,7 +5,7 @@ local files = _local_1_["files"]
 local P = vim.pretty_print
 local scandir_wrapper
 local function _2_()
-  local output = scandir_async(".", {pattern = "scandir", depth = nil, ["add-dirs?"] = false, ["first-found?"] = false})
+  local output = scandir_async(".", {pattern = "init", depth = nil, ["add-dirs?"] = false, ["first-found?"] = false})
   return vim.pretty_print(output)
 end
 scandir_wrapper = a.void(_2_)

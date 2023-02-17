@@ -27,32 +27,30 @@
 
 
 (local read-file-async
-  (do
-    (fn afun [path callback]
-      "Read the content of the file asynchronously.
+  (-> (fn [path callback]
+        "Read the content of the file asynchronously.
 
-      Parameters:
-        - PATH : string
-              Path to the file.
-        - CALLBACK : function
-          - CONTENT : string
-                Content of the file.
-          - STAT : table
-                See: uv.fs_stat()
-      "
-      (print "read-file-async: enter")
-      (match-try   (await.fs_open path "r" 292) ; 292 is 444 in octal
-        (nil fd)   (await.fs_fstat fd)
-        (nil stat) (await.fs_read fd  stat.size  0)
-        (nil data) (await.fs_close fd)
-        (nil true) (do
-                     (print "read-file-async: exit")
-                     (callback data {:mtime stat.mtime.sec}))
-        (catch
-          err (eprint err))))
-    (local afun (async.create afun 2 true))
-    (local afun (async.wrap afun 2))
-    afun))
+        Parameters:
+          - PATH : string
+                Path to the file.
+          - CALLBACK : function
+            - CONTENT : string
+                  Content of the file.
+            - STAT : table
+                  See: uv.fs_stat()
+        "
+        (print "read-file-async: enter")
+        (match-try   (await.fs_open path "r" 292) ; 292 is 444 in octal
+          (nil fd)   (await.fs_fstat fd)
+          (nil stat) (await.fs_read fd  stat.size  0)
+          (nil data) (await.fs_close fd)
+          (nil true) (do
+                       (print "read-file-async: exit")
+                       (callback data {:mtime stat.mtime.sec}))
+          (catch
+            err (eprint err))))
+      (async.create 2 true)
+      (async.wrap 2)))
 
 
 {: read-file

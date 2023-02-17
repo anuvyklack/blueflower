@@ -1,1 +1,1 @@
-return {augroup = vim.api.nvim_create_augroup("blueflower", {clear = true})}
+return {augroup = vim.api.nvim_create_augroup("blueflower", {clear = true}), ["os-sep"] = "/"}

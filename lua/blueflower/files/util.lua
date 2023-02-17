@@ -52,61 +52,57 @@ local function read_file(path)
   return _1_(uv.fs_open(path, "r", 292))
 end
 local read_file_async
-do
-  local function afun(path, callback)
-    print("read-file-async: enter")
-    local function _17_(...)
-      local _18_, _19_ = ...
-      if ((_18_ == nil) and (nil ~= _19_)) then
-        local fd = _19_
-        local function _20_(...)
-          local _21_, _22_ = ...
-          if ((_21_ == nil) and (nil ~= _22_)) then
-            local stat = _22_
-            local function _23_(...)
-              local _24_, _25_ = ...
-              if ((_24_ == nil) and (nil ~= _25_)) then
-                local data = _25_
-                local function _26_(...)
-                  local _27_, _28_ = ...
-                  if ((_27_ == nil) and (_28_ == true)) then
-                    print("read-file-async: exit")
-                    return callback(data, {mtime = stat.mtime.sec})
-                  elseif (nil ~= _27_) then
-                    local err = _27_
-                    return eprint(err)
-                  else
-                    return nil
-                  end
+local function _17_(path, callback)
+  print("read-file-async: enter")
+  local function _18_(...)
+    local _19_, _20_ = ...
+    if ((_19_ == nil) and (nil ~= _20_)) then
+      local fd = _20_
+      local function _21_(...)
+        local _22_, _23_ = ...
+        if ((_22_ == nil) and (nil ~= _23_)) then
+          local stat = _23_
+          local function _24_(...)
+            local _25_, _26_ = ...
+            if ((_25_ == nil) and (nil ~= _26_)) then
+              local data = _26_
+              local function _27_(...)
+                local _28_, _29_ = ...
+                if ((_28_ == nil) and (_29_ == true)) then
+                  print("read-file-async: exit")
+                  return callback(data, {mtime = stat.mtime.sec})
+                elseif (nil ~= _28_) then
+                  local err = _28_
+                  return eprint(err)
+                else
+                  return nil
                 end
-                return _26_(await.fs_close(fd))
-              elseif (nil ~= _24_) then
-                local err = _24_
-                return eprint(err)
-              else
-                return nil
               end
+              return _27_(await.fs_close(fd))
+            elseif (nil ~= _25_) then
+              local err = _25_
+              return eprint(err)
+            else
+              return nil
             end
-            return _23_(await.fs_read(fd, stat.size, 0))
-          elseif (nil ~= _21_) then
-            local err = _21_
-            return eprint(err)
-          else
-            return nil
           end
+          return _24_(await.fs_read(fd, stat.size, 0))
+        elseif (nil ~= _22_) then
+          local err = _22_
+          return eprint(err)
+        else
+          return nil
         end
-        return _20_(await.fs_fstat(fd))
-      elseif (nil ~= _18_) then
-        local err = _18_
-        return eprint(err)
-      else
-        return nil
       end
+      return _21_(await.fs_fstat(fd))
+    elseif (nil ~= _19_) then
+      local err = _19_
+      return eprint(err)
+    else
+      return nil
     end
-    return _17_(await.fs_open(path, "r", 292))
   end
-  local afun0 = async.create(afun, 2, true)
-  local afun1 = async.wrap(afun0, 2)
-  read_file_async = afun1
+  return _18_(await.fs_open(path, "r", 292))
 end
+read_file_async = async.wrap(async.create(_17_, 2, true), 2)
 return {["read-file"] = read_file, ["read-file-async"] = read_file_async}

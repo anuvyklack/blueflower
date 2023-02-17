@@ -1,13 +1,22 @@
+local async = require("blueflower.async")
 local ts = require("blueflower.treesitter")
 local get_node_text = vim.treesitter.query.get_node_text
+local scandir_async = require("blueflower.scandir")
+local _local_1_ = require("blueflower.config")
+local os_sep = _local_1_["os-sep"]
+local _local_2_ = vim.fn
+local getcwd = _local_2_["getcwd"]
+local fnamemodify = _local_2_["fnamemodify"]
 local P = vim.pretty_print
-local _local_1_ = vim.fn
-local getcwd = _local_1_["getcwd"]
-local fnamemodify = _local_1_["fnamemodify"]
-local os_sep = "/"
-local function get_file_full_path(file)
-  return (fnamemodify(getcwd(), ":p:h") .. os_sep .. file)
+local find_hyperlink_file_async
+local function _3_(name, callback)
+  if (name:find("^/") or name:find("^./")) then
+    return callback(fnamemodify(name, ":p"))
+  else
+    return callback(scandir_async(getcwd(), {pattern = name, ["first-found?"] = true}))
+  end
 end
+find_hyperlink_file_async = async.wrap(async.create(_3_, 2, true), 2)
 local function open_file(path, _3fline_num)
   if _3fline_num then
     vim.cmd(string.format("edit +%d %s", _3fline_num, path))
@@ -16,11 +25,12 @@ local function open_file(path, _3fline_num)
     return vim.cmd(string.format("edit %s", path))
   end
 end
-local function open_hyperlink_at_cursor()
+local open_hyperlink_at_cursor_async
+local function _6_()
   local node = ts["find-parent-node-of-type"](ts["get-node-at-cursor"](), {"link", "short_link", "link_definition"})
   if node then
     local link
-    local _3_
+    local _7_
     do
       local tbl_17_auto = {}
       local i_18_auto = #tbl_17_auto
@@ -32,15 +42,16 @@ local function open_hyperlink_at_cursor()
         else
         end
       end
-      _3_ = tbl_17_auto
+      _7_ = tbl_17_auto
     end
-    link = table.concat(_3_, " ")
+    link = table.concat(_7_, " ")
     P(link)
     local ret_1_auto
     do
       local file, target = link:match("^file:(.-)::(.*)$")
       if file then
         P("^file:")
+        P(find_hyperlink_file_async(file))
         ret_1_auto = true
       else
         ret_1_auto = nil
@@ -54,6 +65,7 @@ local function open_hyperlink_at_cursor()
         local file = link:match("^file:(.*)$")
         if file then
           P("^file:")
+          P(find_hyperlink_file_async(file))
           ret_1_auto0 = true
         else
           ret_1_auto0 = nil
@@ -83,4 +95,5 @@ local function open_hyperlink_at_cursor()
     return nil
   end
 end
-return {["open-hyperlink-at-cursor"] = open_hyperlink_at_cursor}
+open_hyperlink_at_cursor_async = async.void(_6_)
+return {["open-hyperlink-at-cursor-async"] = open_hyperlink_at_cursor_async}

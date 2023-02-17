@@ -11,7 +11,7 @@
 (local scandir-wrapper
   (a.void
     (fn []
-      (local output (scandir-async "." {:pattern "scandir"
+      (local output (scandir-async "." {:pattern "init"
                                         :depth nil
                                         :add-dirs? false
                                         :first-found? false}))

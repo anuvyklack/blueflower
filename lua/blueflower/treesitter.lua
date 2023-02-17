@@ -4,25 +4,25 @@ local Buffer = require("blueflower/api-wrappers/buffer")
 local function get_node_at_cursor()
   return ts_utils.get_node_at_cursor(vim.api.nvim_get_current_win())
 end
-local function _find_parent_node_any_of_types(node, types)
+local function impl_find_parent_node_any_of_types(node, types)
   if types[node:type()] then
     return node
   else
     local parent = node:parent()
     if parent then
-      return _find_parent_node_any_of_types(parent, types)
+      return impl_find_parent_node_any_of_types(parent, types)
     else
       return nil
     end
   end
 end
-local function _find_parent_node_of_type(node, node_type)
+local function impl_find_parent_node_of_type(node, node_type)
   if (node:type() == node_type) then
     return node
   else
     local parent = node:parent()
     if parent then
-      return _find_parent_node_of_type(parent, node_type)
+      return impl_find_parent_node_of_type(parent, node_type)
     else
       return nil
     end
@@ -44,9 +44,9 @@ local function find_parent_node_of_type(node, node_type)
       end
       return tbl_14_auto
     end
-    return _find_parent_node_any_of_types(node, _6_())
+    return impl_find_parent_node_any_of_types(node, _6_())
   elseif (_5_ == "string") then
-    return _find_parent_node_of_type(node, node_type)
+    return impl_find_parent_node_of_type(node, node_type)
   else
     return nil
   end
