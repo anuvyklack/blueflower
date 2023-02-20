@@ -4,6 +4,8 @@
 (local M {})
 
 (fn M.setup [user-opts]
+  (let [config (require :blueflower.config)]
+    (config:setup user-opts))
   (vim.filetype.add {:extension {:note "blueflower"
                                  :bf   "blueflower"}})
   (require "blueflower.highlight")

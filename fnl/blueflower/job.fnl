@@ -1,9 +1,10 @@
-(local uv (vim.loop))
+(local uv vim.loop)
 (local {: eprint} (require :blueflower.debug))
+
 
 (fn close-pipes [...]
   "Accepts a number of uv PIPEs and close them if not yet."
-  (for [i (select :# ...)]
+  (for [i 1 (select "#" ...)]
     (let [pipe (select i ...)]
       (when (and pipe (not (pipe:is_closing)))
         (pipe:close)))))
@@ -31,13 +32,13 @@
       - OUTPUT : string[]
   "
   (pipe:read_start (fn [err data]
-                     (when err (eprint err))
+                     (when err (error err))
                      (when data
                        (let [data (data:gsub "\r" "")]
                          (table.insert output data))))))
 
 
-(fn run-job [{: cmd : args : cwd : input &as spec} callback]
+(fn job [{: cmd : args : cwd : input &as spec} ?callback]
   "Start the process.
 
   Parameters:
@@ -59,7 +60,7 @@
         stdin  (when input (uv.new_pipe))
         stdout (uv.new_pipe)
         stderr (uv.new_pipe)]
-    (var (handle pid) (nil nil))
+    (var (handle pid) (values nil nil))
     (set (handle pid) (uv.spawn cmd
                                 {: args
                                  :stdio [stdin stdout stderr]
@@ -69,17 +70,14 @@
                                   (stdout:read_stop)
                                   (stderr:read_stop)
                                   (close-pipes stdin stdout stderr)
-                                  (callback code
-                                            signal
-                                            (if (< 0 (length stdout-data)) stdout-data)
-                                            (if (< 0 (length stderr-data)) stderr-data)))))
+                                  (when ?callback
+                                    (?callback code
+                                               signal
+                                               (if (< 0 (length stdout-data)) stdout-data)
+                                               (if (< 0 (length stderr-data)) stderr-data))))))
     (when (not handle)
       (close-pipes stdin stdout stderr)
-      (error (debug.traceback (.. "Failed to spawn process: "
-                                  (vim.inspect spec)))))
+      (error (debug.traceback (.. "Failed to spawn process: " (vim.inspect spec)))))
     (read-from-pipe stdout stderr-data)
     (read-from-pipe stderr stderr-data)
     (write-to-pipe  stdin  input)))
-
-
-{: run-job}

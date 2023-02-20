@@ -11,25 +11,32 @@ local impl_depth_first_async = nil
 local impl_breadth_first_async = nil
 local scandir_async
 local function _3_(path, _3fopts, callback)
+  local path0
+  if (path:sub(#path) ~= "/") then
+    path0 = (path .. os_sep)
+  else
+    path0 = path
+  end
   local spec = (_3fopts or {})
   if spec.pattern then
-    local _let_4_ = spec
-    local pattern = _let_4_["pattern"]
-    local first_found_3f = _let_4_["first-found?"]
+    local _let_5_ = spec
+    local pattern = _let_5_["pattern"]
+    local first_found_3f = _let_5_["first-found?"]
+    local pattern0 = vim.pesc(pattern)
     local pattern_fn
     do
-      local _5_ = type(pattern)
-      if (_5_ == "function") then
-        pattern_fn = pattern
-      elseif (_5_ == "string") then
-        local function _6_(entry)
-          return entry:match(pattern)
-        end
-        pattern_fn = _6_
-      elseif (_5_ == "table") then
+      local _6_ = type(pattern0)
+      if (_6_ == "function") then
+        pattern_fn = pattern0
+      elseif (_6_ == "string") then
         local function _7_(entry)
+          return entry:match(pattern0)
+        end
+        pattern_fn = _7_
+      elseif (_6_ == "table") then
+        local function _8_(entry)
           local found_3f = false
-          for _, pat in ipairs(pattern) do
+          for _, pat in ipairs(pattern0) do
             if found_3f then break end
             if entry:match(pat) then
               found_3f = true
@@ -38,12 +45,12 @@ local function _3_(path, _3fopts, callback)
           end
           return found_3f
         end
-        pattern_fn = _7_
+        pattern_fn = _8_
       else
         pattern_fn = nil
       end
     end
-    local function _10_(entry)
+    local function _11_(entry)
       if pattern_fn(entry) then
         if first_found_3f then
           spec["found?"] = true
@@ -54,10 +61,10 @@ local function _3_(path, _3fopts, callback)
         return nil
       end
     end
-    spec["match-pattern?"] = _10_
+    spec["match-pattern?"] = _11_
   else
   end
-  spec["base-path"] = path
+  spec["base-path"] = path0
   spec.output = {}
   if (spec.type == "depth") then
     impl_depth_first_async(nil, 1, spec)
@@ -72,39 +79,39 @@ local function _3_(path, _3fopts, callback)
   return callback(spec.output)
 end
 scandir_async = a.wrap(a.create(_3_, 3), 3, true)
-local function _17_(current_dir, level, _15_, callback)
-  local _arg_16_ = _15_
-  local base_path = _arg_16_["base-path"]
-  local output = _arg_16_["output"]
-  local match_pattern_3f = _arg_16_["match-pattern?"]
-  local depth = _arg_16_["depth"]
-  local add_dirs_3f = _arg_16_["add-dirs?"]
-  local hidden_3f = _arg_16_["hidden?"]
-  local spec = _arg_16_
+local function _18_(current_dir, level, _16_, callback)
+  local _arg_17_ = _16_
+  local base_path = _arg_17_["base-path"]
+  local output = _arg_17_["output"]
+  local match_pattern_3f = _arg_17_["match-pattern?"]
+  local depth = _arg_17_["depth"]
+  local add_dirs_3f = _arg_17_["add-dirs?"]
+  local hidden_3f = _arg_17_["hidden?"]
+  local spec = _arg_17_
   local full_path
   if current_dir then
     full_path = (base_path .. os_sep .. current_dir)
   else
     full_path = base_path
   end
-  local function _19_(...)
-    local _20_, _21_ = ...
-    if ((_20_ == nil) and (_21_ == true)) then
-      local function _22_(...)
-        local _23_, _24_ = ...
-        if ((_23_ == nil) and (nil ~= _24_)) then
-          local fd = _24_
+  local function _20_(...)
+    local _21_, _22_ = ...
+    if ((_21_ == nil) and (_22_ == true)) then
+      local function _23_(...)
+        local _24_, _25_ = ...
+        if ((_24_ == nil) and (nil ~= _25_)) then
+          local fd = _25_
           local traverse_dir
-          local function _25_()
+          local function _26_()
             return uv.fs_scandir_next(fd)
           end
-          traverse_dir = _25_
+          traverse_dir = _26_
           for name, type_ in traverse_dir do
             if spec["found?"] then break end
             if (hidden_3f or (name:sub(1, 1) ~= ".")) then
               local entry = ((current_dir or "") .. os_sep .. name)
-              local _26_ = type_
-              if (_26_ == "directory") then
+              local _27_ = type_
+              if (_27_ == "directory") then
                 if ((name ~= ".git") and add_dirs_3f and match_pattern_3f(entry)) then
                   table.insert(output, (base_path .. entry .. os_sep))
                 else
@@ -114,7 +121,7 @@ local function _17_(current_dir, level, _15_, callback)
                 else
                 end
               elseif true then
-                local _ = _26_
+                local _ = _27_
                 if match_pattern_3f(entry) then
                   table.insert(output, (base_path .. entry))
                 else
@@ -125,64 +132,69 @@ local function _17_(current_dir, level, _15_, callback)
             end
           end
           return nil
-        elseif (nil ~= _23_) then
-          local err = _23_
+        elseif (nil ~= _24_) then
+          local err = _24_
           return print(err)
-        elseif ((_23_ == nil) and (_24_ == false)) then
+        elseif ((_24_ == nil) and (_25_ == false)) then
           return print(string.format("%s directory is not accessible by the current user!", current_dir))
         else
           return nil
         end
       end
-      return _22_(await.fs_scandir(full_path))
-    elseif (nil ~= _20_) then
-      local err = _20_
+      return _23_(await.fs_scandir(full_path))
+    elseif (nil ~= _21_) then
+      local err = _21_
       return print(err)
-    elseif ((_20_ == nil) and (_21_ == false)) then
+    elseif ((_21_ == nil) and (_22_ == false)) then
       return print(string.format("%s directory is not accessible by the current user!", current_dir))
     else
       return nil
     end
   end
-  _19_(await.fs_access(full_path, "X"))
+  _20_(await.fs_access(full_path, "X"))
   return callback()
 end
-impl_depth_first_async = a.wrap(a.create(_17_, 4), 4, true)
-local function _36_(current_dir, level, _34_, callback)
-  local _arg_35_ = _34_
-  local base_path = _arg_35_["base-path"]
-  local queue = _arg_35_["queue"]
-  local output = _arg_35_["output"]
-  local match_pattern_3f = _arg_35_["match-pattern?"]
-  local depth = _arg_35_["depth"]
-  local add_dirs_3f = _arg_35_["add-dirs?"]
-  local hidden_3f = _arg_35_["hidden?"]
-  local spec = _arg_35_
+impl_depth_first_async = a.wrap(a.create(_18_, 4), 4, true)
+local function _37_(current_dir, level, _35_, callback)
+  local _arg_36_ = _35_
+  local base_path = _arg_36_["base-path"]
+  local queue = _arg_36_["queue"]
+  local output = _arg_36_["output"]
+  local match_pattern_3f = _arg_36_["match-pattern?"]
+  local depth = _arg_36_["depth"]
+  local add_dirs_3f = _arg_36_["add-dirs?"]
+  local hidden_3f = _arg_36_["hidden?"]
+  local spec = _arg_36_
   local full_path
   if current_dir then
-    full_path = (base_path .. os_sep .. current_dir)
+    full_path = (base_path .. current_dir)
   else
     full_path = base_path
   end
-  local function _38_(...)
-    local _39_, _40_ = ...
-    if ((_39_ == nil) and (_40_ == true)) then
-      local function _41_(...)
-        local _42_, _43_ = ...
-        if ((_42_ == nil) and (nil ~= _43_)) then
-          local fd = _43_
+  local function _39_(...)
+    local _40_, _41_ = ...
+    if ((_40_ == nil) and (_41_ == true)) then
+      local function _42_(...)
+        local _43_, _44_ = ...
+        if ((_43_ == nil) and (nil ~= _44_)) then
+          local fd = _44_
           local traverse_dir
-          local function _44_()
+          local function _45_()
             return uv.fs_scandir_next(fd)
           end
-          traverse_dir = _44_
+          traverse_dir = _45_
           for name, type_ in traverse_dir do
             if spec["found?"] then break end
             if (hidden_3f or (name:sub(1, 1) ~= ".")) then
-              local entry = ((current_dir or "") .. os_sep .. name)
-              local _45_ = type_
-              if (_45_ == "directory") then
-                if ((name ~= ".git") and add_dirs_3f and match_pattern_3f(entry)) then
+              local entry
+              if current_dir then
+                entry = (current_dir .. os_sep .. name)
+              else
+                entry = name
+              end
+              local _47_ = type_
+              if (_47_ == "directory") then
+                if ((name ~= ".git") and add_dirs_3f and (not match_pattern_3f or match_pattern_3f(entry))) then
                   table.insert(output, (base_path .. entry .. os_sep))
                 else
                 end
@@ -191,8 +203,8 @@ local function _36_(current_dir, level, _34_, callback)
                 else
                 end
               elseif true then
-                local _ = _45_
-                if match_pattern_3f(entry) then
+                local _ = _47_
+                if (not match_pattern_3f or match_pattern_3f(entry)) then
                   table.insert(output, (base_path .. entry))
                 else
                 end
@@ -202,27 +214,27 @@ local function _36_(current_dir, level, _34_, callback)
             end
           end
           return nil
-        elseif (nil ~= _42_) then
-          local err = _42_
+        elseif (nil ~= _43_) then
+          local err = _43_
           return print(err)
-        elseif ((_42_ == nil) and (_43_ == false)) then
+        elseif ((_43_ == nil) and (_44_ == false)) then
           return print(string.format("%s directory is not accessible by the current user!", current_dir))
         else
           return nil
         end
       end
-      return _41_(await.fs_scandir(full_path))
-    elseif (nil ~= _39_) then
-      local err = _39_
+      return _42_(await.fs_scandir(full_path))
+    elseif (nil ~= _40_) then
+      local err = _40_
       return print(err)
-    elseif ((_39_ == nil) and (_40_ == false)) then
+    elseif ((_40_ == nil) and (_41_ == false)) then
       return print(string.format("%s directory is not accessible by the current user!", current_dir))
     else
       return nil
     end
   end
-  _38_(await.fs_access(full_path, "X"))
+  _39_(await.fs_access(full_path, "X"))
   return callback()
 end
-impl_breadth_first_async = a.wrap(a.create(_36_, 4), 4, true)
+impl_breadth_first_async = a.wrap(a.create(_37_, 4), 4, true)
 return scandir_async

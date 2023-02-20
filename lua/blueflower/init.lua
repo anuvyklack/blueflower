@@ -1,5 +1,9 @@
 local M = {}
 M.setup = function(user_opts)
+  do
+    local config = require("blueflower.config")
+    config:setup(user_opts)
+  end
   vim.filetype.add({extension = {note = "blueflower", bf = "blueflower"}})
   require("blueflower.highlight")
   require("blueflower.autocmd")

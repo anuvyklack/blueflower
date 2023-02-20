@@ -4,33 +4,56 @@ local get_node_text = vim.treesitter.query.get_node_text
 local scandir_async = require("blueflower.scandir")
 local _local_1_ = require("blueflower.config")
 local os_sep = _local_1_["os-sep"]
+local config = _local_1_
 local _local_2_ = vim.fn
 local getcwd = _local_2_["getcwd"]
 local fnamemodify = _local_2_["fnamemodify"]
+local _local_3_ = require("blueflower.files.util")
+local open_file = _local_3_["open-file"]
+local open_in_vim = _local_3_["open-in-vim"]
+local find_file_async = _local_3_["find-file-async"]
+local _local_4_ = require("blueflower.util")
+local notify_error = _local_4_["notify-error"]
 local P = vim.pretty_print
-local find_hyperlink_file_async
-local function _3_(name, callback)
-  if (name:find("^/") or name:find("^./")) then
+local get_file_path_async
+local function get_file_path_async0(name, callback)
+  if name:find("^///") then
+    return callback(name:sub(3))
+  elseif (name:find("^/") or name:find("^./") or name:fine("^~/")) then
     return callback(fnamemodify(name, ":p"))
   else
-    return callback(scandir_async(getcwd(), {pattern = name, ["first-found?"] = true}))
+    local _5_
+    do
+      local _let_6_ = scandir_async(getcwd(), {pattern = name, ["first-found?"] = true})
+      local file = _let_6_[1]
+      _5_ = callback(file)
+    end
+    if _5_ then
+      return callback(find_file_async(getcwd(), name))
+    else
+      return nil
+    end
   end
 end
-find_hyperlink_file_async = async.wrap(async.create(_3_, 2, true), 2)
-local function open_file(path, _3fline_num)
-  if _3fline_num then
-    vim.cmd(string.format("edit +%d %s", _3fline_num, path))
-    return vim.cmd("normal! zv")
-  else
-    return vim.cmd(string.format("edit %s", path))
+get_file_path_async = async.wrap(async.create(get_file_path_async0, 2, true), 2)
+local function process_link_shortcuts(link)
+  local new_link = nil
+  for shortcut, expand_to in pairs(config.link_shortcuts) do
+    if new_link then break end
+    local pattern = string.format("^%s:", shortcut)
+    local start, stop = link:find(pattern)
+    if start then
+      new_link = (expand_to .. link:sub((stop + 1)))
+    else
+    end
   end
+  return (new_link or link)
 end
 local open_hyperlink_at_cursor_async
-local function _6_()
+local function open_hyperlink_at_cursor_async0()
   local node = ts["find-parent-node-of-type"](ts["get-node-at-cursor"](), {"link", "short_link", "link_definition"})
   if node then
-    local link
-    local _7_
+    local lines
     do
       local tbl_17_auto = {}
       local i_18_auto = #tbl_17_auto
@@ -42,16 +65,15 @@ local function _6_()
         else
         end
       end
-      _7_ = tbl_17_auto
+      lines = tbl_17_auto
     end
-    link = table.concat(_7_, " ")
-    P(link)
+    local link = table.concat(lines, " ")
+    local link0 = process_link_shortcuts(link)
     local ret_1_auto
     do
-      local file, target = link:match("^file:(.-)::(.*)$")
-      if file then
-        P("^file:")
-        P(find_hyperlink_file_async(file))
+      local fname, target = link0:match("^file:(.-)::(.*)$")
+      if fname then
+        open_in_vim(get_file_path_async(fname))
         ret_1_auto = true
       else
         ret_1_auto = nil
@@ -62,23 +84,31 @@ local function _6_()
     else
       local ret_1_auto0
       do
-        local file = link:match("^file:(.*)$")
-        if file then
-          P("^file:")
-          P(find_hyperlink_file_async(file))
-          ret_1_auto0 = true
+        local path, fname = link0:match("^file:(.-):find:(.*)$")
+        if (path and fname) then
+          local file = find_file_async(path, fname)
+          async.scheduler()
+          if file then
+            open_file(file)
+          else
+            notify_error(string.format("No file found! Path: \"%s\" File: \"%s\"", path, fname))
+          end
         else
-          ret_1_auto0 = nil
         end
+        ret_1_auto0 = (path or fname)
       end
       if ret_1_auto0 then
         return ret_1_auto0
       else
         local ret_1_auto1
         do
-          local title = link:match("^%**")
-          if title then
-            P("title")
+          local fname = link0:match("^file:(.*)$")
+          if fname then
+            do
+              local path = get_file_path_async(fname)
+              async.scheduler()
+              open_file(vim.uri_from_fname(path))
+            end
             ret_1_auto1 = true
           else
             ret_1_auto1 = nil
@@ -87,7 +117,31 @@ local function _6_()
         if ret_1_auto1 then
           return ret_1_auto1
         else
-          return nil
+          local ret_1_auto2
+          if link0:find("^https?://") then
+            __fnl_global__xdg_2dopen(link0)
+            ret_1_auto2 = true
+          else
+            ret_1_auto2 = nil
+          end
+          if ret_1_auto2 then
+            return ret_1_auto2
+          else
+            local ret_1_auto3
+            do
+              local title = link0:match("^%**")
+              if title then
+                ret_1_auto3 = true
+              else
+                ret_1_auto3 = nil
+              end
+            end
+            if ret_1_auto3 then
+              return ret_1_auto3
+            else
+              return nil
+            end
+          end
         end
       end
     end
@@ -95,5 +149,5 @@ local function _6_()
     return nil
   end
 end
-open_hyperlink_at_cursor_async = async.void(_6_)
+open_hyperlink_at_cursor_async = async.void(open_hyperlink_at_cursor_async0)
 return {["open-hyperlink-at-cursor-async"] = open_hyperlink_at_cursor_async}

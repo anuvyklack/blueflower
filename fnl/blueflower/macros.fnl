@@ -1,13 +1,13 @@
-(fn do-until-true [form ...]
-  "Accept a sequence of forms.  Execute first one. If it returns false, execute
-  second one. If it returns false, execute third one, and so on.  If any form
-  returns true, stop execution."
+(fn look-through [form ...]
+  "Accept a sequence of forms.  Try first one. If it returns false, try
+  second one. If it returns false, try third one, and so on.  When any form
+  evaluates to true, stop execution."
   (if (not= form nil)
     `(let [ret# ,form]
        (if ret#
            ret#
-           (do-until-true ,...)))))
+           (look-through ,...)))))
 
 
-{: do-until-true}
+{: look-through}
 

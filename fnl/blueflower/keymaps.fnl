@@ -1,20 +1,12 @@
-(local augroup "blueflower")
+(local ts (require :blueflower.treesitter))
+(local {: open-hyperlink-at-cursor-async} (require :blueflower.hyperlink))
+(local {: augroup} (require :blueflower.config))
 (local autocmd vim.api.nvim_create_autocmd)
 (local keymap vim.keymap)
-(local ts (require "blueflower/treesitter"))
-(local {: open-hyperlink-at-cursor-async} (require "blueflower/hyperlink"))
 (local P vim.pretty_print)
 
-(fn set-keymaps []
-  (keymap.set :n :<CR> open-hyperlink-at-cursor-async))
-
-; (fn set-keymaps []
-;   (keymap.set :n :<CR>
-;               (fn []
-;                 ; (P (ts.get-node-text (ts.current-node)))
-;                 ; (P (get-hyperlink-parent-node))
-;                 (open-hyperlink)
-;                 )))
+(fn set-keymaps [{: buf}]
+  (keymap.set :n :<CR> open-hyperlink-at-cursor-async {:buffer buf}))
 
 (autocmd :FileType {:pattern "blueflower"
                     :desc "Set blueflower keymaps"

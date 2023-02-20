@@ -32,9 +32,13 @@
           - CALLBACK : function
             - OUTPUT : string[]
         "
+        (local path (if (not= (path:sub (length path)) "/")
+                        (.. path os-sep)
+                        path))
         (local spec (or ?opts {}))
         (when spec.pattern
           (let [{: pattern : first-found?} spec
+                pattern (vim.pesc pattern)
                 pattern-fn (match (type pattern)
                              :function pattern
                              :string (fn [entry] (entry:match pattern))
@@ -52,13 +56,14 @@
         (set spec.base-path path)
         (set spec.output [])
         (if (= spec.type "depth")
-          (impl-depth-first-async nil 1 spec)
-          (do
-            (set spec.queue [])
-            (impl-breadth-first-async nil 1 spec)
-            (while (not (empty? spec.queue))
-              (let [next-dir (table.remove spec.queue 1)]
-                (impl-breadth-first-async next-dir 2 spec)))))
+            (impl-depth-first-async nil 1 spec)
+            ;else
+            (do
+              (set spec.queue [])
+              (impl-breadth-first-async nil 1 spec)
+              (while (not (empty? spec.queue))
+                (let [next-dir (table.remove spec.queue 1)]
+                  (impl-breadth-first-async next-dir 2 spec)))))
         (callback spec.output))
       (a.create 3)
       (a.wrap 3 true)))
@@ -94,7 +99,6 @@
                                 (when (match-pattern? entry)
                                   (table.insert output (.. base-path  entry))))))))
              (catch
-               ; err (eprint err)
                err (print err)
                (nil false) (print (string.format
                                     "%s directory is not accessible by the current user!"
@@ -111,7 +115,7 @@
                : depth : add-dirs? : hidden? &as spec}
               callback]
            (local full-path (if current-dir
-                                (.. base-path  os-sep  current-dir)
+                                (.. base-path current-dir)
                                 base-path))
            (match-try (await.fs_access full-path "X")
              (nil true) (await.fs_scandir full-path)
@@ -119,22 +123,26 @@
                         (each [name type_ traverse-dir &until spec.found?]
                           (when (or hidden?
                                     (not= (name:sub 1 1) "."))
-                            (let [entry (.. (or current-dir "")  os-sep  name)]
+                            (let [entry (if current-dir
+                                            (.. current-dir  os-sep  name)
+                                            name)]
                               (match type_
                                 :directory
-                                (do (when (and (not= name ".git")
-                                               add-dirs?
-                                               (match-pattern? entry))
-                                      (table.insert output (.. base-path entry os-sep)))
-                                    (when (or (not depth)
-                                              (< level depth))
-                                      (table.insert queue entry)))
+                                (do
+                                  (when (and (not= name ".git")
+                                             add-dirs?
+                                             (or (not match-pattern?)
+                                                 (match-pattern? entry)))
+                                    (table.insert output (.. base-path entry os-sep)))
+                                  (when (or (not depth)
+                                            (< level depth))
+                                    (table.insert queue entry)))
 
                                 _ ; all others
-                                (when (match-pattern? entry)
+                                (when (or (not match-pattern?)
+                                          (match-pattern? entry))
                                   (table.insert output (.. base-path  entry))))))))
              (catch
-               ; err (eprint err)
                err (print err)
                (nil false) (print (string.format
                                     "%s directory is not accessible by the current user!"

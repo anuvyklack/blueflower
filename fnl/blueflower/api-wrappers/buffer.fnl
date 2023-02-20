@@ -22,7 +22,9 @@
 
 (fn Buffer.get-name [self]
   "Gets the full file name of the buffer."
-  (api.nvim_buf_get_name self.id))
+  (let [file (api.nvim_buf_get_name self.id)]
+    (if (not= file "")
+        file)))
 
 (fn Buffer.delete [self {: force : unload}]
   (api.nvim_buf_delete self.id {:force  (or force false)

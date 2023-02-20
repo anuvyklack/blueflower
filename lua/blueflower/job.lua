@@ -1,8 +1,8 @@
-local uv = vim.loop()
+local uv = vim.loop
 local _local_1_ = require("blueflower.debug")
 local eprint = _local_1_["eprint"]
 local function close_pipes(...)
-  for i = select("#", ...) do
+  for i = 1, select("#", ...) do
     local pipe = select(i, ...)
     if (pipe and not pipe:is_closing()) then
       pipe:close()
@@ -28,7 +28,7 @@ end
 local function read_from_pipe(pipe, output)
   local function _5_(err, data)
     if err then
-      eprint(err)
+      error(err)
     else
     end
     if data then
@@ -40,7 +40,7 @@ local function read_from_pipe(pipe, output)
   end
   return pipe:read_start(_5_)
 end
-local function run_job(_8_, callback)
+local function job(_8_, _3fcallback)
   local _arg_9_ = _8_
   local cmd = _arg_9_["cmd"]
   local args = _arg_9_["args"]
@@ -57,26 +57,30 @@ local function run_job(_8_, callback)
   end
   local stdout = uv.new_pipe()
   local stderr = uv.new_pipe()
-  local handle, pid = nil(nil)
+  local handle, pid = nil, nil
   local function _11_(code, signal)
     handle:close()
     stdout:read_stop()
     stderr:read_stop()
     close_pipes(stdin, stdout, stderr)
-    local _12_
-    if (0 < #stdout_data) then
-      _12_ = stdout_data
-    else
-      _12_ = nil
-    end
-    local function _14_()
-      if (0 < #stderr_data) then
-        return stderr_data
+    if _3fcallback then
+      local _12_
+      if (0 < #stdout_data) then
+        _12_ = stdout_data
       else
-        return nil
+        _12_ = nil
       end
+      local function _14_()
+        if (0 < #stderr_data) then
+          return stderr_data
+        else
+          return nil
+        end
+      end
+      return _3fcallback(code, signal, _12_, _14_())
+    else
+      return nil
     end
-    return callback(code, signal, _12_, _14_())
   end
   handle, pid = uv.spawn(cmd, {args = args, stdio = {stdin, stdout, stderr}, cwd = cwd}, _11_)
   if not handle then
@@ -88,4 +92,4 @@ local function run_job(_8_, callback)
   read_from_pipe(stderr, stderr_data)
   return write_to_pipe(stdin, input)
 end
-return {["run-job"] = run_job}
+return job

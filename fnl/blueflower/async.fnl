@@ -1,7 +1,4 @@
-;;; This is rewritten in fennel https://github.com/lewis6991/async.nvim plugin.
-
-; (fn full-unpack [list ?i]
-;   (unpack list (or ?i 1) (table.maxn list)))
+;;; This is basically rewritten in fennel https://github.com/lewis6991/async.nvim plugin.
 
 (local lua-unpack unpack)
 (macro unpack [lst ?i ?j]
@@ -12,6 +9,7 @@
 ;; Store all the async threads in a weak table so we don't prevent them from
 ;; being garbage collected
 (local handles (setmetatable {} {:__mode "k"}))
+; (local handles-stack (setmetatable [] {:__mode "k"}))
 
 (fn running? []
   "Returns whether the current execution context is async."
@@ -24,25 +22,29 @@
   ;;
   ;; We need to handle both.
   (let [thread (coroutine.running)]
-    (if (and thread
-             (. handles thread))
-      true)))
+    ; (if (and thread (. handles thread))
+    ;   true)
+    (and thread (. handles thread))
+    ))
 
 (local Async_T {})
-(do
-  (fn Async_T.new [thread]
-    (let [handle (setmetatable {} {:__index Async_T})]
-      (tset handles thread handle)
-      handle))
 
-  (fn Async_T.cancel [{:_current cur} thread]
-    "Analogous to uv.close. Cancel anything running on the event loop."
-    (when (and cur (not (cur:is_cancelled)))
-      (cur:cancel thread)))
 
-  (fn Async_T.is_cancelled [{:_current cur}]
-    "Analogous to uv.is_closing."
-    (if cur (cur:is_cancelled))))
+(fn Async_T.new [thread]
+  (let [handle (setmetatable {} {:__index Async_T})]
+    (tset handles thread handle)
+    handle))
+
+
+(fn Async_T.cancel [{: _current} thread]
+  "Analogous to uv.close. Cancel anything running on the event loop."
+  (when (and _current (not (_current:is_cancelled)))
+    (_current:cancel thread)))
+
+
+(fn Async_T.is_cancelled [{: _current}]
+  "Analogous to uv.is_closing."
+  (if _current (_current:is_cancelled)))
 
 
 (fn Async_T? [handle]
@@ -69,20 +71,19 @@
 
   (fn step [...]
     (let [[ok nargs fun &as ret] [(coroutine.resume thread ...)]
-          args [(select 4 (unpack ret))]
-          ]
+          args [(select 4 (unpack ret))]]
       (when (not ok)
         (print (string.format "The coroutine failed with this message:\n%s\n%s"
                               (. ret 2) ; error message
                               (debug.traceback thread)))
         (error (string.format "The coroutine failed with this message:\n%s\n%s"
                               (. ret 2) ; error message
-                              (debug.traceback thread)))
+                              (debug.traceback thread))
+               0)
         )
       (match (coroutine.status thread)
         :dead (when callback
-                (callback (unpack ret 4))
-                )
+                (callback (unpack ret 4)))
         _ (do
             (assert (= (type fun) :function) "type error :: expected func")
             (tset args nargs step)
@@ -113,7 +114,7 @@
   (let [ [ok &as ret] [(coroutine.yield argc pfunc ...)] ]
     (when (not ok)
       (let [[_ err traceback] ret]
-        (print (string.format "Wrapped function failed: %s\n%s" err traceback))
+        (print (string.format "wait: Wrapped function failed: %s\n%s" err traceback))
         (error (string.format "Wrapped function failed: %s\n%s" err traceback))
         ))
     (unpack ret 2)
