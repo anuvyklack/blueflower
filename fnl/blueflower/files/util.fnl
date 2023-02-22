@@ -1,9 +1,10 @@
 (local uv vim.loop)
 (local async (require :blueflower.async))
 (local job (require :blueflower.job))
-(local scandir-async (require :blueflower.scandir))
+(local scandir-async (require :blueflower.files.scandir))
 (local config (require :blueflower.config))
 (local {: executable? : has? : notify-error} (require :blueflower.util))
+(local {: fnamemodify} vim.fn)
 (local await {:fs_open  (async.wrap uv.fs_open 4)
               :fs_fstat (async.wrap uv.fs_fstat 2)
               :fs_read  (async.wrap uv.fs_read 4)
@@ -55,30 +56,6 @@
       (async.wrap 2)))
 
 
-(local find-file-async
-  (-> (fn find-file-async [path name callback]
-        "Find file with NAME at PATH."
-        (let [path (vim.fn.fnamemodify path ":p")
-              [file &as files] (scandir-async path {:pattern name :first-found? true})]
-          (callback file)))
-      (async.create 3 true)
-      (async.wrap 3)))
-
-
-; (fn xdg-open [target]
-;   (print "xdg-open: enter")
-;   (let [{: system} vim.fn
-;         format  string.format]
-;     (if (executable? "xdg-open")
-;         (system (format "xdg-open \"%s\"" target))
-;
-;         (executable? "open")
-;         (system (format "open \"%s\"" target))
-;
-;         (has? "win32")
-;         (system (format "start \"%s\"" target)))))
-
-
 (fn xdg-open [target]
   (if (executable? "xdg-open")
       (job {:cmd "xdg-open" :args [target]})
@@ -87,21 +64,11 @@
       (job {:cmd "open" :args [target]})
 
       (has? "win32")
-      (job {:cmd "start" :args [(.. "\"" target "\"")]})))
-
-
-; (fn xdg-open [target]
-;   (var spec nil)
-;   (if (executable? "xdg-open")
-;       (set spec {:cmd "xdg-open" :args [target]})
-;
-;       (executable? "open")
-;       (set spec {:cmd "open" :args [target]})
-;
-;       (has? "win32")
-;       (set spec {:cmd "rundll32.exe"
-;                  :args ["url.dll,FileProtocolHandler" target]}))
-;   (job spec))
+      (job {:cmd "start" :args [target]})
+      ; (job {:cmd "start" :args [(.. "\"" target "\"")]})
+      ; (job {:cmd "rundll32.exe"
+      ;       :args ["url.dll,FileProtocolHandler" target]})
+    ))
 
 
 (fn open-in-vim [path ?line-num]
@@ -116,16 +83,56 @@
 
 (fn open-file [path ?line-num]
   "Open file at PATH at LINE-NUM line."
-  (let [extension (vim.fn.fnamemodify path ":e")]
+  (let [extension (fnamemodify path ":e")]
     (if (. config.open-in-external-app  extension)
         (xdg-open path)
         ;else open in vim
         (open-in-vim path ?line-num))))
 
 
+(local ui-select-file-async
+  (-> (fn ui-select-file-async [files callback]
+        (vim.ui.select files
+                       {:prompt "Choose the file"
+                        :format_item #(fnamemodify $1 ":~:.")}
+                       callback))
+      (async.wrap 2)))
+
+
+(local find-file-async
+  (-> (fn find-file-async [path fname callback]
+        "Find file with FNAME at PATH."
+        (let [path (fnamemodify path ":p")
+              ; files (scandir-async path {:pattern fname :first-found? true})
+              files (scandir-async path {:pattern fname})
+              file (match (length files)
+                     0 (do (async.scheduler)
+                           (notify-error
+                             (string.format "No file found! Path: \"%s\" File: \"%s\""
+                                            path fname))
+                         nil)
+                     1 (. files 1)
+                     _ (ui-select-file-async files))]
+          (callback file)))
+      (async.create 3 true)
+      (async.wrap 3)))
+
+
+(local find-and-open-file-async
+  (-> (fn find-and-open-file-async [path fname callback]
+        (match (find-file-async path fname)
+          file (do (async.scheduler)
+                   (open-file file)
+                   (callback true))
+          nil  (callback false)))
+      (async.create 3 true)
+      (async.wrap 3)))
+
+
 {: read-file
  : read-file-async
- : find-file-async
  : open-file
  : xdg-open
- : open-in-vim}
+ : open-in-vim
+ : find-file-async
+ : find-and-open-file-async}

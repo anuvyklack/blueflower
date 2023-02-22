@@ -37,10 +37,11 @@
 ;; lua/orgmode/utils/init.lua :: utils.get_node_text
 
 
-(fn get-node-text [node]
+(fn get-node-text [node ?buffer]
   "(vim.treesitter.query.get_node_text node bufnr {:concat true})"
-  (let [buffer (Buffer)]
+  (let [buffer (or ?buffer (Buffer))]
     (buffer:get-text (node:range))))
+
 
 {: get-node-at-cursor
  : find-parent-node-of-type

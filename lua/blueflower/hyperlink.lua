@@ -1,41 +1,26 @@
+local _local_1_ = vim.api
+local nvim_buf_get_name = _local_1_["nvim_buf_get_name"]
+local nvim_win_set_cursor = _local_1_["nvim_win_set_cursor"]
 local async = require("blueflower.async")
 local ts = require("blueflower.treesitter")
-local get_node_text = vim.treesitter.query.get_node_text
-local scandir_async = require("blueflower.scandir")
-local _local_1_ = require("blueflower.config")
-local os_sep = _local_1_["os-sep"]
-local config = _local_1_
-local _local_2_ = vim.fn
-local getcwd = _local_2_["getcwd"]
-local fnamemodify = _local_2_["fnamemodify"]
-local _local_3_ = require("blueflower.files.util")
-local open_file = _local_3_["open-file"]
-local open_in_vim = _local_3_["open-in-vim"]
-local find_file_async = _local_3_["find-file-async"]
-local _local_4_ = require("blueflower.util")
-local notify_error = _local_4_["notify-error"]
+local _local_2_ = vim.treesitter.query
+local get_node_text = _local_2_["get-node-text"]
+local scandir_async = require("blueflower.files.scandir")
+local _local_3_ = require("blueflower.config")
+local os_sep = _local_3_["os-sep"]
+local config = _local_3_
+local _local_4_ = vim.fn
+local getcwd = _local_4_["getcwd"]
+local fnamemodify = _local_4_["fnamemodify"]
+local _local_5_ = require("blueflower.files.util")
+local open_file = _local_5_["open-file"]
+local xdg_open = _local_5_["xdg-open"]
+local find_and_open_file_async = _local_5_["find-and-open-file-async"]
+local _local_6_ = require("blueflower.util")
+local notify_error = _local_6_["notify-error"]
+local _local_7_ = require("blueflower.files")
+local get_current_file = _local_7_["get-current-file"]
 local P = vim.pretty_print
-local get_file_path_async
-local function get_file_path_async0(name, callback)
-  if name:find("^///") then
-    return callback(name:sub(3))
-  elseif (name:find("^/") or name:find("^./") or name:fine("^~/")) then
-    return callback(fnamemodify(name, ":p"))
-  else
-    local _5_
-    do
-      local _let_6_ = scandir_async(getcwd(), {pattern = name, ["first-found?"] = true})
-      local file = _let_6_[1]
-      _5_ = callback(file)
-    end
-    if _5_ then
-      return callback(find_file_async(getcwd(), name))
-    else
-      return nil
-    end
-  end
-end
-get_file_path_async = async.wrap(async.create(get_file_path_async0, 2, true), 2)
 local function process_link_shortcuts(link)
   local new_link = nil
   for shortcut, expand_to in pairs(config.link_shortcuts) do
@@ -48,6 +33,99 @@ local function process_link_shortcuts(link)
     end
   end
   return (new_link or link)
+end
+local hyperlink_open_file_async
+local function hyperlink_open_file_async0(file, callback)
+  local file0 = file:gsub("^///", "/")
+  if (file0:find("^/") or file0:find("^%./") or file0:find("^~/")) then
+    local file1 = fnamemodify(file0, ":p")
+    open_file(file1)
+    return callback(true)
+  else
+    return callback(find_and_open_file_async(getcwd(), file0))
+  end
+end
+hyperlink_open_file_async = async.wrap(async.create(hyperlink_open_file_async0, 2, true), 2)
+local function jump_to_heading(heading)
+  local _, level = heading:find("^%*+")
+  local title = vim.trim(string.gsub(string.gsub(heading:sub((level + 1)), "\13?\n", " "), "%s+", " "))
+  local file = get_current_file()
+  local headings = file["get-headings"](file)
+  local found_title = nil
+  for _0, h in ipairs(headings[level]) do
+    if found_title then break end
+    if (title == h.title) then
+      found_title = h
+    else
+    end
+  end
+  if not found_title then
+    local headings0
+    do
+      table.remove(headings, level)
+      headings0 = vim.tbl_flatten(headings)
+    end
+    for h in ipairs(headings0) do
+      if found_title then break end
+      if (title == h.title) then
+        found_title = h
+      else
+      end
+    end
+  else
+  end
+  if not found_title then
+    return notify_error(("No section with title: " .. title))
+  else
+    local row, col = (found_title.node):start()
+    return nvim_win_set_cursor(0, {(row + 1), col})
+  end
+end
+local function jump_to_id(target)
+  local file = get_current_file()
+  local ids = file["get-ids"](file)
+  local id_node = ids[target]
+  if not id_node then
+    return notify_error(("No such id: " .. target))
+  else
+    local parent = id_node:parent()
+    local target_node
+    do
+      local _14_ = parent:type()
+      if (_14_ == "section") then
+        target_node = parent
+      elseif (_14_ == "list") then
+        target_node = (parent:field("list_item"))[1]
+      elseif (_14_ == "definition") then
+        target_node = (parent:field("term"))[1]
+      elseif (_14_ == "tag") then
+        target_node = (parent:field("content"))[1]
+      else
+        target_node = nil
+      end
+    end
+    local row, col = target_node:start()
+    return nvim_win_set_cursor(0, {(row + 1), col})
+  end
+end
+local function jump_to_target(target)
+  local ret_1_auto
+  if target:find("^%*+") then
+    jump_to_heading(target)
+    ret_1_auto = true
+  else
+    ret_1_auto = nil
+  end
+  if ret_1_auto then
+    return ret_1_auto
+  else
+    local ret_1_auto0 = jump_to_id(target)
+    if ret_1_auto0 then
+      return ret_1_auto0
+    else
+      return nil
+    end
+  end
 end
 local open_hyperlink_at_cursor_async
 local function open_hyperlink_at_cursor_async0()
@@ -70,45 +148,44 @@ local function open_hyperlink_at_cursor_async0()
     local link = table.concat(lines, " ")
     local link0 = process_link_shortcuts(link)
     local ret_1_auto
-    do
-      local fname, target = link0:match("^file:(.-)::(.*)$")
-      if fname then
-        open_in_vim(get_file_path_async(fname))
-        ret_1_auto = true
-      else
-        ret_1_auto = nil
-      end
+    if link0:find("^https?://") then
+      xdg_open(link0)
+      ret_1_auto = true
+    else
+      ret_1_auto = nil
     end
     if ret_1_auto then
       return ret_1_auto
     else
       local ret_1_auto0
       do
-        local path, fname = link0:match("^file:(.-):find:(.*)$")
-        if (path and fname) then
-          local file = find_file_async(path, fname)
-          async.scheduler()
-          if file then
-            open_file(file)
-          else
-            notify_error(string.format("No file found! Path: \"%s\" File: \"%s\"", path, fname))
+        local path, fname, target = link0:match("^file:(.-):find:(.-)::(.*)$")
+        if (path and fname and target) then
+          local function _22_(...)
+            local _23_ = ...
+            if (_23_ == true) then
+              return jump_to_target(target)
+            elseif true then
+              local __63_auto = _23_
+              return ...
+            else
+              return nil
+            end
           end
+          _22_(find_and_open_file_async(path, fname))
+          ret_1_auto0 = true
         else
+          ret_1_auto0 = nil
         end
-        ret_1_auto0 = (path or fname)
       end
       if ret_1_auto0 then
         return ret_1_auto0
       else
         local ret_1_auto1
         do
-          local fname = link0:match("^file:(.*)$")
-          if fname then
-            do
-              local path = get_file_path_async(fname)
-              async.scheduler()
-              open_file(vim.uri_from_fname(path))
-            end
+          local path, fname = link0:match("^file:(.-):find:(.*)$")
+          if (path and fname) then
+            find_and_open_file_async(path, fname)
             ret_1_auto1 = true
           else
             ret_1_auto1 = nil
@@ -118,19 +195,34 @@ local function open_hyperlink_at_cursor_async0()
           return ret_1_auto1
         else
           local ret_1_auto2
-          if link0:find("^https?://") then
-            __fnl_global__xdg_2dopen(link0)
-            ret_1_auto2 = true
-          else
-            ret_1_auto2 = nil
+          do
+            local fname, target = link0:match("^file:(.-)::(.*)$")
+            if (fname and target) then
+              local function _27_(...)
+                local _28_ = ...
+                if (_28_ == true) then
+                  return jump_to_target(target)
+                elseif true then
+                  local __63_auto = _28_
+                  return ...
+                else
+                  return nil
+                end
+              end
+              _27_(hyperlink_open_file_async(fname))
+              ret_1_auto2 = true
+            else
+              ret_1_auto2 = nil
+            end
           end
           if ret_1_auto2 then
             return ret_1_auto2
           else
             local ret_1_auto3
             do
-              local title = link0:match("^%**")
-              if title then
+              local fname = link0:match("^file:(.*)$")
+              if fname then
+                hyperlink_open_file_async(fname)
                 ret_1_auto3 = true
               else
                 ret_1_auto3 = nil
@@ -139,7 +231,12 @@ local function open_hyperlink_at_cursor_async0()
             if ret_1_auto3 then
               return ret_1_auto3
             else
-              return nil
+              local ret_1_auto4 = jump_to_target(link0)
+              if ret_1_auto4 then
+                return ret_1_auto4
+              else
+                return nil
+              end
             end
           end
         end

@@ -1,8 +1,8 @@
 ; (local command vim.api.nvim_create_user_command)
 (local async (require :blueflower.async))
 (local config (require :blueflower.config))
-(local scandir-async (require :blueflower.scandir))
-(local {: files} (require :blueflower.files))
+(local scandir-async (require :blueflower.files.scandir))
+(local {: get-current-file} (require :blueflower.files))
 (local P vim.pretty_print)
 
 (macro command [name cmd ?opts]
@@ -21,47 +21,24 @@
 ; (command :Scandir scandir-wrapper {})
 (command :Scandir scandir-wrapper)
 
-(command :BlueflowerFiles (fn [] (P files)))
+(command :BlueflowerFiles
+         (fn []
+           ; (P files)
+           (let [file (get-current-file)]
+             (file:get-headings))))
 
-; -- Creating a simple setTimeout wrapper
-; local function setTimeout(timeout, callback)
-;   local timer = uv.new_timer()
-;   timer:start(timeout, 0, function ()
-;     timer:stop()
-;     timer:close()
-;     callback()
-;   end)
-;   return timer
-; end
-
-(local uv vim.loop)
-
-(local set-timeout-async
-  (-> (fn set-timeout-async [timeout callback]
-        (print "set-timeout-async: enter")
-        (let [timer (uv.new_timer)]
-          (timer:start timeout 0 (fn [] (timer:stop) (timer:close) (callback)))
-          timer))
-      (async.wrap 2)))
-
-
-(local bomb
-  (-> (fn bomb []
-        (print "bomb: enter")
-        (set-timeout-async 400)
-        (error "bomb"))
-      (async.void)
-      (async.wrap 0)))
-
-
-(local bomb-wrapper
-  (-> (fn bomb-wrapper []
-        (print "bomb-wrapper: enter")
-        (bomb))
-      (async.void)))
-
-
-(command "BlueflowerBomb" bomb-wrapper)
-
-; (command "BlueflowerBomb" bomb)
-
+; (command :BlueflowerFiles
+;          (fn []
+;            ; (P files)
+;            (let [{: buffer : tstree &as file} (. files (vim.api.nvim_buf_get_name 0))
+;                  root (tstree:root)
+;                  query "(directive
+;                           (name) @name
+;                           (#eq? @name \"label\")
+;                           (content) @content) @label"
+;                  ts-query (file:ts-query query)]
+;              (P ts-query.captures)
+;              (each [id node metadata (ts-query:iter_matches root buffer.id)]
+;                (P id node metadata))
+;              )
+;            ))

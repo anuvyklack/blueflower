@@ -59,4 +59,7 @@ local function _10_(path, _3fcallback)
   end
 end
 load_file_async = async.wrap(async.create(_10_, 2, true), 2)
-return {files = files, ["load-file-async"] = load_file_async}
+local function get_current_file()
+  return files[vim.api.nvim_buf_get_name(0)]
+end
+return {files = files, ["get-current-file"] = get_current_file}

@@ -53,6 +53,10 @@
       (async.wrap 2)))
 
 
+(fn get-current-file []
+  (. files (vim.api.nvim_buf_get_name 0)))
+
+
 {: files
- : load-file-async}
+ : get-current-file}
 

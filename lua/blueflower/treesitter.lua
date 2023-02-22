@@ -51,8 +51,8 @@ local function find_parent_node_of_type(node, node_type)
     return nil
   end
 end
-local function get_node_text(node)
-  local buffer = Buffer()
+local function get_node_text(node, _3fbuffer)
+  local buffer = (_3fbuffer or Buffer())
   return buffer["get-text"](buffer, node:range())
 end
 return {["get-node-at-cursor"] = get_node_at_cursor, ["find-parent-node-of-type"] = find_parent_node_of_type, ["get-node-text"] = get_node_text}

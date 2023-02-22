@@ -22,18 +22,18 @@ end
 local function notify_warning(message)
   return vim.notify(("[Blueflower] " .. message), vim.log.levels.WARN)
 end
-local function merge_table_deep_21(into, from)
-  for key, value in pairs(from) do
+local function merge_table_deep_21(t_into, t_from)
+  for key, value in pairs(t_from) do
     local _2_ = type(value)
     if (_2_ == "table") then
-      into[key] = merge_table_deep_21(into[key], value)
+      t_into[key] = merge_table_deep_21(t_into[key], value)
     elseif true then
       local _ = _2_
-      into[key] = from[key]
+      t_into[key] = t_from[key]
     else
     end
   end
-  return into
+  return t_into
 end
 local function make_set_from_list(list)
   local set_ = {}

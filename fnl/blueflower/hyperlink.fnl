@@ -1,49 +1,19 @@
+(local {: nvim_buf_get_name : nvim_win_set_cursor} vim.api)
 (local async (require :blueflower.async))
 (local ts (require :blueflower.treesitter))
-(local get-node-text vim.treesitter.query.get_node_text)
-(local scandir-async (require :blueflower.scandir))
+(local {: get-node-text} vim.treesitter.query)
+(local scandir-async (require :blueflower.files.scandir))
 (local {: os-sep &as config} (require :blueflower.config))
 (local {: getcwd : fnamemodify} vim.fn)
-(local {: open-file : open-in-vim : find-file-async} (require :blueflower.files.util))
+(local {: open-file : xdg-open
+        : find-and-open-file-async} (require :blueflower.files.util))
 (local {: notify-error} (require :blueflower.util))
+(local {: get-current-file} (require :blueflower.files))
 (import-macros {: look-through} "fnl.blueflower.macros")
 ; (import-macros {: looking-through} "blueflower.macros")
 (local P vim.pretty_print)
 
 ; file:shell::* Title
-
-
-; function Hyperlinks.get_file_real_path(url_path)
-;    local path = url_path
-;    path = path:gsub('^file:', '')
-;    if path:match('^/') then
-;       return path
-;    end
-;    path = path:gsub('^./', '')
-;    return fnamemodify(utils.current_file_path(), ':p:h') .. '/' .. path
-; end
-
-; (fn get-file-full-path [file]
-;   (.. (fnamemodify (getcwd) ":p") os-sep file))
-
-
-(local get-file-path-async
-  (-> (fn get-file-path-async [name callback]
-        (if (name:find "^///")
-            (callback (name:sub 3))
-            ;elseif
-            (or (name:find "^/")
-                (name:find "^./")
-                (name:fine "^~/"))
-            (callback (fnamemodify name ":p"))
-            ;else
-            (let [[file] (scandir-async (getcwd) {:pattern name :first-found? true})]
-              (callback file))
-            (callback (find-file-async (getcwd) name))
-            ))
-      (async.create 2 true)
-      (async.wrap 2)))
-
 
 (fn process-link-shortcuts [link]
   (var new-link nil)
@@ -55,10 +25,72 @@
   (or new-link link))
 
 
+(local hyperlink-open-file-async
+  (-> (fn hyperlink-open-file-async [file callback]
+        (local file (file:gsub "^///" "/"))
+        (if (or (file:find "^/")
+                (file:find "^%./")
+                (file:find "^~/"))
+            (let [file (fnamemodify file ":p")]
+              (open-file file)
+              (callback true))
+            ;else
+            (callback (find-and-open-file-async (getcwd) file))))
+      (async.create 2 true)
+      (async.wrap 2)))
+
+
+(fn jump-to-heading [heading]
+  (let [(_ level) (heading:find "^%*+")
+        title (-> (heading:sub (+ level 1))
+                  (string.gsub "\r?\n"  " ")
+                  (string.gsub "%s+"  " ")
+                  (vim.trim))
+        file (get-current-file)
+        headings (file:get-headings)]
+    (var found-title nil)
+    (each [_ h (ipairs (. headings level)) &until found-title]
+      (when (= title h.title)
+        (set found-title h)))
+    (when (not found-title)
+      (let [headings (do (table.remove headings level)
+                         (vim.tbl_flatten headings))]
+        (each [h (ipairs headings) &until found-title]
+          (when (= title h.title)
+            (set found-title h)))))
+    (if (not found-title)
+        (notify-error (.. "No section with title: " title))
+        (let [(row col) (found-title.node:start)]
+          (nvim_win_set_cursor 0 [(+ row 1) col])))))
+
+
+(fn jump-to-id [target]
+  (let [file (get-current-file)
+        ids (file:get-ids)
+        id-node (. ids target)]
+    (if (not id-node)
+        (notify-error (.. "No such id: " target))
+        (let [parent (id-node:parent)
+              target-node (match (parent:type)
+                            "section"    parent
+                            "list"       (. (parent:field "list_item") 1)
+                            "definition" (. (parent:field "term") 1)
+                            "tag"        (. (parent:field "content") 1))
+              (row col) (target-node:start)]
+          (nvim_win_set_cursor 0 [(+ row 1) col])))))
+
+
+(fn jump-to-target [target]
+  (look-through
+    (when (target:find "^%*+")
+      (jump-to-heading target)
+      true)
+
+    (jump-to-id target)))
+
+
 (local open-hyperlink-at-cursor-async
   (-> (fn open-hyperlink-at-cursor-async []
-        "Open hyperlink at cursor."
-        ; (local node (get-hyperlink-parent-node))
         (local node (ts.find-parent-node-of-type (ts.get-node-at-cursor)
                                                  [:link :short_link :link_definition]))
         (when node
@@ -68,29 +100,6 @@
                 link (table.concat lines " ")
                 link (process-link-shortcuts link)]
             (look-through
-              (let [(fname target) (link:match "^file:(.-)::(.*)$")]
-                (when fname
-                  (open-in-vim (get-file-path-async fname))
-                  true))
-
-              (let [(path fname) (link:match "^file:(.-):find:(.*)$")]
-                (when (and path fname)
-                  (let [file (find-file-async path fname)]
-                    (async.scheduler)
-                    (if file
-                        (open-file file)
-                        (notify-error
-                          (string.format "No file found! Path: \"%s\" File: \"%s\""
-                                         path fname)))))
-                (or path fname))
-
-              (let [fname (link:match "^file:(.*)$")]
-                (when fname
-                  (let [path (get-file-path-async fname)]
-                    (async.scheduler)
-                    (open-file (vim.uri_from_fname path)))
-                  true))
-
               (when (link:find "^https?://")
                 ; (if vim.g.loaded_netrwPlugin
                 ;     (vim.fn.netrw#BrowseX link (vim.fn.netrw#CheckIfRemote))
@@ -99,11 +108,29 @@
                 (xdg-open link)
                 true)
 
-              (let [title (link:match "^%**")]
-                (when title
-                  true)
-                ))
-            )))
+              (let [(path fname target) (link:match "^file:(.-):find:(.-)::(.*)$")]
+                (when (and path fname target)
+                  (match-try (find-and-open-file-async path fname)
+                        true (jump-to-target target))
+                  true))
+
+              (let [(path fname) (link:match "^file:(.-):find:(.*)$")]
+                (when (and path fname)
+                  (find-and-open-file-async path fname)
+                  true))
+
+              (let [(fname target) (link:match "^file:(.-)::(.*)$")]
+                (when (and fname target)
+                  (match-try (hyperlink-open-file-async fname)
+                        true (jump-to-target target))
+                  true))
+
+              (let [fname (link:match "^file:(.*)$")]
+                (when fname
+                  (hyperlink-open-file-async fname)
+                  true))
+
+              (jump-to-target link)))))
       (async.void)))
 
 
