@@ -6,7 +6,9 @@
   {:os-sep "/"
    :augroup (vim.api.nvim_create_augroup "blueflower" {:clear true})
    :open_in_external_app ["pdf" "png" "jpeg" "jpg" "doc" "docx"]
-   :link_shortcuts {}
+   :link_abbreviations {}
+   ; :link_definition_behavior "pass" ; "stick"
+   :link_definition_behavior "stick"
    })
 
 (fn Config.setup [self ?input]

@@ -36,7 +36,7 @@ highlight.set("@bf.underline", {underline = true, default = true})
 highlight.set("@bf.strikethrough", {strikethrough = true, default = true})
 local _8_
 do
-  local t_7_ = get_hl("markdownCode")
+  local t_7_ = get_hl("String")
   if (nil ~= t_7_) then
     t_7_ = (t_7_).fg
   else
@@ -44,6 +44,15 @@ do
   _8_ = t_7_
 end
 highlight.set("@bf.verbatim", {fg = _8_, default = true})
+highlight.set("@bf.tag", {link = "Comment", default = true})
+highlight.set("@bf.hashtag", {link = "Constant", default = true})
+highlight.set("@bf.tag.code.language", {link = "Constant", default = true})
+highlight.set("@bf.tag.code", {link = "@bf.token.code_block", default = true})
+highlight.set("@bf.tag.end.code", {link = "@bf.tag.code", default = true})
+highlight.set("@bf.inline_tag", {link = "Constant", default = true})
+highlight.set("@bf.inline_tag.label", {fg = (get_hl("Normal")).fg, default = true})
+highlight.set("@bf.inline_tag.content", {link = "markdownURL", default = true})
+highlight.set("@bf.inline_tag.parameters", {link = "Boolean", default = true})
 for _, _10_ in ipairs({{"undone", "Normal"}, {"done", "Type"}, {"urgent", "Error"}, {"in_progress", "WarningMsg"}, {"pending", "String"}, {"uncertain", "Boolean"}, {"discarded", "Comment"}}) do
   local _each_11_ = _10_
   local status = _each_11_[1]
@@ -60,14 +69,6 @@ highlight.set("@bf.link.reference_definition", {link = "@bf.link.label", default
 highlight.set("@bf.token.link.label", {link = "@bf.link.label", default = true})
 highlight.set("@bf.token.link.short_reference", {link = "@bf.token.link.label", default = true})
 highlight.set("@bf.token.link.reference_definition", {link = "@bf.token.link.label", default = true})
-highlight.set("@bf.tag", {link = "Comment", default = true})
-highlight.set("@bf.hashtag", {link = "Constant", default = true})
-highlight.set("@bf.tag.code.language", {link = "Constant", default = true})
-highlight.set("@bf.tag.code", {link = "@bf.token.code_block", default = true})
-highlight.set("@bf.tag.end.code", {link = "@bf.tag.code", default = true})
-highlight.set("@bf.inline_tag", {link = "Constant", default = true})
-highlight.set("@bf.inline_tag.label", {fg = (get_hl("Normal")).fg, default = true})
-highlight.set("@bf.inline_tag.content", {link = "markdownURL", default = true})
-highlight.set("@bf.inline_tag.parameters", {link = "Boolean", default = true})
+highlight.set("@bf.token.definition", {fg = (get_hl("Type")).fg, default = true})
 highlight.set("@bf.directive.name", {link = "String", default = true})
 return highlight.set("@bf.directive.content", {link = "Comment", default = true})

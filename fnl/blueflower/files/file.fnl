@@ -1,9 +1,9 @@
 (local uv vim.loop)
 (local {: class} (require :blueflower.util))
 (local {: read-file} (require :blueflower.files.util))
-(local {: parse_query : get_node_text} (require :vim.treesitter.query))
+; (local {: parse_query : get_node_text} (require :vim.treesitter.query))
 (local LanguageTree (require :vim.treesitter.languagetree))
-(local {: get_node_text} vim.treesitter.query)
+(local {: parse_query : get_node_text} vim.treesitter.query)
 (local query-cache {})
 (local P vim.pretty_print)
 
@@ -63,29 +63,6 @@
         (set self.mtime stat.mtime))))
 
 
-; function utils.get_ts_matches(query, node, file_content, file_content_str)
-;    local matches = {}
-;    local ts_query = query_cache[query]
-;    if not ts_query then
-;       ts_query = ts.parse_query('org', query)
-;       query_cache[query] = ts_query
-;    end
-;    for _, match, _ in ts_query:iter_matches(node, file_content_str) do
-;       local items = {}
-;       for id, matched_node in pairs(match) do
-;          local name = ts_query.captures[id]
-;          local node_text = utils.get_node_text(matched_node, file_content)
-;          items[name] = {
-;             node = matched_node,
-;             text_list = node_text,
-;             text = node_text[1],
-;          }
-;       end
-;       table.insert(matches, items)
-;    end
-;    return matches
-; end
-
 (fn File.parse-query [self query]
   (let [query (query:gsub "\n?%s"  " ")
         ts-query (or (. query-cache query)
@@ -110,6 +87,24 @@
     (each [_ [_ content-node id-node] _ (ts-query:iter_matches root source)]
       (let [id-text (get_node_text content-node source {:concat true})]
         (tset output id-text id-node)))
+    output))
+
+
+(fn File.get-link-definitions [self]
+  (self:refresh)
+  (let [output {}
+        query "(link_definition
+                 (label) @label
+                 (target) @target) @link-definition"
+        ts-query (self:parse-query query)
+        source (or self.bufnr self.content)
+        root   (self.tstree:root)]
+    (each [_ [label-node target-node link-def-node] _ (ts-query:iter_matches root source)]
+      (let [label    (get_node_text label-node source {:concat true})
+            link   (get_node_text target-node source {:concat true})
+            line-num (+ (link-def-node:start) 1)]
+        (tset output label {: link
+                            : line-num})))
     output))
 
 

@@ -20,10 +20,11 @@ local _local_6_ = require("blueflower.util")
 local notify_error = _local_6_["notify-error"]
 local _local_7_ = require("blueflower.files")
 local get_current_file = _local_7_["get-current-file"]
+local open_link_async = nil
 local P = vim.pretty_print
 local function process_link_shortcuts(link)
   local new_link = nil
-  for shortcut, expand_to in pairs(config.link_shortcuts) do
+  for shortcut, expand_to in pairs(config.link_abbreviations) do
     if new_link then break end
     local pattern = string.format("^%s:", shortcut)
     local start, stop = link:find(pattern)
@@ -81,6 +82,28 @@ local function jump_to_heading(heading)
     return nvim_win_set_cursor(0, {(row + 1), col})
   end
 end
+local function jump_to_link_definition(target)
+  local file = get_current_file()
+  local link_defs = file["get-link-definitions"](file)
+  local link_definition = link_defs[target]
+  if link_definition then
+    local _let_14_ = link_definition
+    local link = _let_14_["link"]
+    local line_num = _let_14_["line-num"]
+    do
+      local _15_ = config.link_definition_behavior
+      if (_15_ == "pass") then
+        open_link_async(link)
+      elseif (_15_ == "stick") then
+        nvim_win_set_cursor(0, {line_num, 0})
+      else
+      end
+    end
+    return true
+  else
+    return false
+  end
+end
 local function jump_to_id(target)
   local file = get_current_file()
   local ids = file["get-ids"](file)
@@ -91,14 +114,14 @@ local function jump_to_id(target)
     local parent = id_node:parent()
     local target_node
     do
-      local _14_ = parent:type()
-      if (_14_ == "section") then
+      local _18_ = parent:type()
+      if (_18_ == "section") then
         target_node = parent
-      elseif (_14_ == "list") then
+      elseif (_18_ == "list") then
         target_node = (parent:field("list_item"))[1]
-      elseif (_14_ == "definition") then
+      elseif (_18_ == "definition") then
         target_node = (parent:field("term"))[1]
-      elseif (_14_ == "tag") then
+      elseif (_18_ == "tag") then
         target_node = (parent:field("content"))[1]
       else
         target_node = nil
@@ -119,16 +142,119 @@ local function jump_to_target(target)
   if ret_1_auto then
     return ret_1_auto
   else
-    local ret_1_auto0 = jump_to_id(target)
+    local ret_1_auto0 = jump_to_link_definition(target)
     if ret_1_auto0 then
       return ret_1_auto0
     else
-      return nil
+      local ret_1_auto1 = jump_to_id(target)
+      if ret_1_auto1 then
+        return ret_1_auto1
+      else
+        return nil
+      end
     end
   end
 end
-local open_hyperlink_at_cursor_async
-local function open_hyperlink_at_cursor_async0()
+local function open_link_async0(link)
+  local link0 = process_link_shortcuts(link)
+  local ret_1_auto
+  if link0:find("^https?://") then
+    xdg_open(link0)
+    ret_1_auto = true
+  else
+    ret_1_auto = nil
+  end
+  if ret_1_auto then
+    return ret_1_auto
+  else
+    local ret_1_auto0
+    do
+      local path, fname, target = link0:match("^file:(.-):find:(.-)::(.*)$")
+      if (path and fname and target) then
+        local function _26_(...)
+          local _27_ = ...
+          if (_27_ == true) then
+            return jump_to_target(target)
+          elseif true then
+            local __63_auto = _27_
+            return ...
+          else
+            return nil
+          end
+        end
+        _26_(find_and_open_file_async(path, fname))
+        ret_1_auto0 = true
+      else
+        ret_1_auto0 = nil
+      end
+    end
+    if ret_1_auto0 then
+      return ret_1_auto0
+    else
+      local ret_1_auto1
+      do
+        local path, fname = link0:match("^file:(.-):find:(.*)$")
+        if (path and fname) then
+          find_and_open_file_async(path, fname)
+          ret_1_auto1 = true
+        else
+          ret_1_auto1 = nil
+        end
+      end
+      if ret_1_auto1 then
+        return ret_1_auto1
+      else
+        local ret_1_auto2
+        do
+          local fname, target = link0:match("^file:(.-)::(.*)$")
+          if (fname and target) then
+            local function _31_(...)
+              local _32_ = ...
+              if (_32_ == true) then
+                return jump_to_target(target)
+              elseif true then
+                local __63_auto = _32_
+                return ...
+              else
+                return nil
+              end
+            end
+            _31_(hyperlink_open_file_async(fname))
+            ret_1_auto2 = true
+          else
+            ret_1_auto2 = nil
+          end
+        end
+        if ret_1_auto2 then
+          return ret_1_auto2
+        else
+          local ret_1_auto3
+          do
+            local fname = link0:match("^file:(.*)$")
+            if fname then
+              hyperlink_open_file_async(fname)
+              ret_1_auto3 = true
+            else
+              ret_1_auto3 = nil
+            end
+          end
+          if ret_1_auto3 then
+            return ret_1_auto3
+          else
+            local ret_1_auto4 = jump_to_target(link0)
+            if ret_1_auto4 then
+              return ret_1_auto4
+            else
+              return nil
+            end
+          end
+        end
+      end
+    end
+  end
+end
+open_link_async = async.void(open_link_async0)
+local function open_hyperlink_at_cursor_async()
   local node = ts["find-parent-node-of-type"](ts["get-node-at-cursor"](), {"link", "short_link", "link_definition"})
   if node then
     local lines
@@ -146,105 +272,9 @@ local function open_hyperlink_at_cursor_async0()
       lines = tbl_17_auto
     end
     local link = table.concat(lines, " ")
-    local link0 = process_link_shortcuts(link)
-    local ret_1_auto
-    if link0:find("^https?://") then
-      xdg_open(link0)
-      ret_1_auto = true
-    else
-      ret_1_auto = nil
-    end
-    if ret_1_auto then
-      return ret_1_auto
-    else
-      local ret_1_auto0
-      do
-        local path, fname, target = link0:match("^file:(.-):find:(.-)::(.*)$")
-        if (path and fname and target) then
-          local function _22_(...)
-            local _23_ = ...
-            if (_23_ == true) then
-              return jump_to_target(target)
-            elseif true then
-              local __63_auto = _23_
-              return ...
-            else
-              return nil
-            end
-          end
-          _22_(find_and_open_file_async(path, fname))
-          ret_1_auto0 = true
-        else
-          ret_1_auto0 = nil
-        end
-      end
-      if ret_1_auto0 then
-        return ret_1_auto0
-      else
-        local ret_1_auto1
-        do
-          local path, fname = link0:match("^file:(.-):find:(.*)$")
-          if (path and fname) then
-            find_and_open_file_async(path, fname)
-            ret_1_auto1 = true
-          else
-            ret_1_auto1 = nil
-          end
-        end
-        if ret_1_auto1 then
-          return ret_1_auto1
-        else
-          local ret_1_auto2
-          do
-            local fname, target = link0:match("^file:(.-)::(.*)$")
-            if (fname and target) then
-              local function _27_(...)
-                local _28_ = ...
-                if (_28_ == true) then
-                  return jump_to_target(target)
-                elseif true then
-                  local __63_auto = _28_
-                  return ...
-                else
-                  return nil
-                end
-              end
-              _27_(hyperlink_open_file_async(fname))
-              ret_1_auto2 = true
-            else
-              ret_1_auto2 = nil
-            end
-          end
-          if ret_1_auto2 then
-            return ret_1_auto2
-          else
-            local ret_1_auto3
-            do
-              local fname = link0:match("^file:(.*)$")
-              if fname then
-                hyperlink_open_file_async(fname)
-                ret_1_auto3 = true
-              else
-                ret_1_auto3 = nil
-              end
-            end
-            if ret_1_auto3 then
-              return ret_1_auto3
-            else
-              local ret_1_auto4 = jump_to_target(link0)
-              if ret_1_auto4 then
-                return ret_1_auto4
-              else
-                return nil
-              end
-            end
-          end
-        end
-      end
-    end
+    return open_link_async0(link)
   else
     return nil
   end
 end
-open_hyperlink_at_cursor_async = async.void(open_hyperlink_at_cursor_async0)
 return {["open-hyperlink-at-cursor-async"] = open_hyperlink_at_cursor_async}

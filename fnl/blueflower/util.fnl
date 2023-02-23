@@ -11,22 +11,28 @@
     class))
 
 (fn notify-error-once [message]
-  (vim.notify_once message vim.log.levels.ERROR {:title "Blueflower:"}))
+  (vim.schedule
+    (fn []
+      (vim.notify_once message vim.log.levels.ERROR {:title "Blueflower:"}))))
 
 (fn notify-error [message]
-  (vim.notify (.. "[Blueflower] " message) vim.log.levels.ERROR))
+  (vim.schedule
+    (fn []
+      (vim.notify (.. "[Blueflower] " message) vim.log.levels.ERROR))))
 
 (fn notify-warning [message]
-  (vim.notify (.. "[Blueflower] " message) vim.log.levels.WARN))
+  (vim.schedule
+    (fn []
+      (vim.notify (.. "[Blueflower] " message) vim.log.levels.WARN))))
 
-(fn merge-table-deep! [t-into t-from]
+(fn merge-table-deep! [tbl-into t-from]
   "Merge table T-FROM into table T-INTO.
   This function modify the T-INTO table!"
   (each [key value (pairs t-from)]
     (match (type value)
-      :table (tset t-into key (merge-table-deep! (. t-into key) value))
-      _      (tset t-into key (. t-from key))))
-  t-into)
+      :table (tset tbl-into key (merge-table-deep! (. tbl-into key) value))
+      _      (tset tbl-into key (. t-from key))))
+  tbl-into)
 
 (fn make-set-from-list [list]
   (let [set_ {}]

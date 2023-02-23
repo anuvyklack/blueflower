@@ -14,21 +14,30 @@ local function class(parent)
   return class0
 end
 local function notify_error_once(message)
-  return vim.notify_once(message, vim.log.levels.ERROR, {title = "Blueflower:"})
+  local function _2_()
+    return vim.notify_once(message, vim.log.levels.ERROR, {title = "Blueflower:"})
+  end
+  return vim.schedule(_2_)
 end
 local function notify_error(message)
-  return vim.notify(("[Blueflower] " .. message), vim.log.levels.ERROR)
+  local function _3_()
+    return vim.notify(("[Blueflower] " .. message), vim.log.levels.ERROR)
+  end
+  return vim.schedule(_3_)
 end
 local function notify_warning(message)
-  return vim.notify(("[Blueflower] " .. message), vim.log.levels.WARN)
+  local function _4_()
+    return vim.notify(("[Blueflower] " .. message), vim.log.levels.WARN)
+  end
+  return vim.schedule(_4_)
 end
 local function merge_table_deep_21(t_into, t_from)
   for key, value in pairs(t_from) do
-    local _2_ = type(value)
-    if (_2_ == "table") then
+    local _5_ = type(value)
+    if (_5_ == "table") then
       t_into[key] = merge_table_deep_21(t_into[key], value)
     elseif true then
-      local _ = _2_
+      local _ = _5_
       t_into[key] = t_from[key]
     else
     end

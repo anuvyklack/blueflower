@@ -203,7 +203,7 @@
 
 ;; }}}
 
-;; Defitions {{{
+;; Definitions {{{
 (definition
   (directive
     (token) @bf.directive.name.definition

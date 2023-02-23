@@ -34,7 +34,25 @@
 (hl "@bf.italic"        {:italic true})
 (hl "@bf.underline"     {:underline true})
 (hl "@bf.strikethrough" {:strikethrough true})
-(hl "@bf.verbatim"      {:fg (?. (get-hl "markdownCode") :fg)})
+(hl "@bf.verbatim"      {:fg (?. (get-hl "String") :fg)})
+;; }}}
+
+;; Tags {{{
+
+(hl "@bf.tag"         {:link :Comment})
+(hl "@bf.hashtag"     {:link :Constant})
+(hl "@bf.tag.code.language" {:link  :Constant})
+(hl "@bf.tag.code"          {:link  "@bf.token.code_block"})
+(hl "@bf.tag.end.code"      {:link  "@bf.tag.code"})
+
+(hl "@bf.inline_tag"  {:link :Constant})
+; (hl "@bf.token.inline_tag.label" {})
+(hl "@bf.inline_tag.label" {:fg (. (get-hl :Normal) :fg)})
+; (hl "@bf.token.inline_tag.content" {})
+(hl "@bf.inline_tag.content" {:link  :markdownURL})
+; (hl "@bf.token.inline_tag.parameters" {})
+(hl "@bf.inline_tag.parameters" {:link :Boolean})
+
 ;; }}}
 
 ;; List {{{
@@ -77,21 +95,9 @@
 
 ;; }}}
 
-;; Tags {{{
+;; Definitions {{{
 
-(hl "@bf.tag"         {:link :Comment})
-(hl "@bf.hashtag"     {:link :Constant})
-(hl "@bf.tag.code.language" {:link  :Constant})
-(hl "@bf.tag.code"          {:link  "@bf.token.code_block"})
-(hl "@bf.tag.end.code"      {:link  "@bf.tag.code"})
-
-(hl "@bf.inline_tag"  {:link :Constant})
-; (hl "@bf.token.inline_tag.label" {})
-(hl "@bf.inline_tag.label" {:fg (. (get-hl :Normal) :fg)})
-; (hl "@bf.token.inline_tag.content" {})
-(hl "@bf.inline_tag.content" {:link  :markdownURL})
-; (hl "@bf.token.inline_tag.parameters" {})
-(hl "@bf.inline_tag.parameters" {:link :Boolean})
+(hl "@bf.token.definition" {:fg (. (get-hl "Type") :fg)})
 
 ;; }}}
 
