@@ -102,6 +102,7 @@
 (local find-file-async
   (-> (fn find-file-async [path fname callback]
         "Find file with FNAME at PATH."
+        (P "find-file-async: enter")
         (let [path (fnamemodify path ":p")
               ; files (scandir-async path {:pattern fname :first-found? true})
               files (scandir-async path {:pattern fname})
@@ -120,6 +121,7 @@
 
 (local find-and-open-file-async
   (-> (fn find-and-open-file-async [path fname callback]
+        (P "find-and-open-file-async: enter")
         (match (find-file-async path fname)
           file (do (async.scheduler)
                    (open-file file)

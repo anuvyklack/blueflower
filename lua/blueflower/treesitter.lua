@@ -1,9 +1,6 @@
 local ts_utils = require("nvim-treesitter.ts_utils")
 local parsers = require("nvim-treesitter.parsers")
 local Buffer = require("blueflower/api-wrappers/buffer")
-local function get_node_at_cursor()
-  return ts_utils.get_node_at_cursor(vim.api.nvim_get_current_win())
-end
 local function impl_find_parent_node_any_of_types(node, types)
   if types[node:type()] then
     return node
@@ -55,4 +52,4 @@ local function get_node_text(node, _3fbuffer)
   local buffer = (_3fbuffer or Buffer())
   return buffer["get-text"](buffer, node:range())
 end
-return {["get-node-at-cursor"] = get_node_at_cursor, ["find-parent-node-of-type"] = find_parent_node_of_type, ["get-node-text"] = get_node_text}
+return {["get-node-at-cursor"] = ts_utils.get_node_at_cursor, ["go-to-node"] = ts_utils.goto_node, ["find-parent-node-of-type"] = find_parent_node_of_type, ["get-node-text"] = get_node_text}

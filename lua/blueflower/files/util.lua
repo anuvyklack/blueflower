@@ -149,6 +149,7 @@ end
 ui_select_file_async = async.wrap(ui_select_file_async0, 2)
 local find_file_async
 local function find_file_async0(path, fname, callback)
+  P("find-file-async: enter")
   local path0 = fnamemodify(path, ":p")
   local files = scandir_async(path0, {pattern = fname})
   local file
@@ -172,6 +173,7 @@ end
 find_file_async = async.wrap(async.create(find_file_async0, 3, true), 3)
 local find_and_open_file_async
 local function find_and_open_file_async0(path, fname, callback)
+  P("find-and-open-file-async: enter")
   local _42_ = find_file_async(path, fname)
   if (nil ~= _42_) then
     local file = _42_

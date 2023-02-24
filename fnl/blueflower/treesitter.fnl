@@ -2,9 +2,9 @@
 (local parsers  (require "nvim-treesitter.parsers"))
 (local Buffer   (require "blueflower/api-wrappers/buffer"))
 
-(fn get-node-at-cursor []
-  "Return the node under cursor."
-  (ts-utils.get_node_at_cursor (vim.api.nvim_get_current_win)))
+; (fn get-node-at-cursor []
+;   "Return the node under cursor."
+;   (get_node_at_cursor (vim.api.nvim_get_current_win)))
 
 ;; lua P(require("nvim-treesitter.ts_utils").get_node_at_cursor(vim.api.nvim_get_current_win()):field("target"))
 
@@ -43,7 +43,8 @@
     (buffer:get-text (node:range))))
 
 
-{: get-node-at-cursor
+{:get-node-at-cursor ts-utils.get_node_at_cursor
+ :go-to-node ts-utils.goto_node
  : find-parent-node-of-type
  : get-node-text}
 

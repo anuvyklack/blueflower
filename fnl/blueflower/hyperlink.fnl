@@ -1,6 +1,6 @@
 (local {: nvim_buf_get_name : nvim_win_set_cursor} vim.api)
 (local async (require :blueflower.async))
-(local ts (require :blueflower.treesitter))
+(local {: go-to-node &as ts} (require :blueflower.treesitter))
 (local {: get-node-text} vim.treesitter.query)
 (local scandir-async (require :blueflower.files.scandir))
 (local {: os-sep &as config} (require :blueflower.config))
@@ -14,6 +14,7 @@
 (var open-link-async nil)
 (local P vim.pretty_print)
 
+;; TODO: When open file on direct path, check if file exists, and rise an error if not.
 
 (fn process-link-shortcuts [link]
   (var new-link nil)
@@ -37,7 +38,7 @@
             ;else
             (callback (find-and-open-file-async (getcwd) file))))
       (async.create 2 true)
-      (async.wrap 2)))
+      (async.wrap 2 true)))
 
 
 (fn jump-to-heading [heading]
@@ -60,8 +61,10 @@
             (set found-title h)))))
     (if (not found-title)
         (notify-error (.. "No section with title: " title))
-        (let [(row col) (found-title.node:start)]
-          (nvim_win_set_cursor 0 [(+ row 1) col])))))
+        ; (let [(row col) (found-title.node:start)]
+        ;   (nvim_win_set_cursor 0 [(+ row 1) col]))
+        (go-to-node found-title.node)
+        )))
 
 
 (fn jump-to-link-definition [target]
@@ -90,7 +93,9 @@
                             "definition" (. (parent:field "term") 1)
                             "tag"        (. (parent:field "content") 1))
               (row col) (target-node:start)]
-          (nvim_win_set_cursor 0 [(+ row 1) col])))))
+          ; (nvim_win_set_cursor 0 [(+ row 1) col])
+          (go-to-node target-node)
+          ))))
 
 
 (fn jump-to-target [target]
@@ -105,7 +110,7 @@
 
 
 (set open-link-async
-  (-> (fn open-link-async [link]
+  (-> (fn [link]
         (local link (process-link-shortcuts link))
         (look-through
           (when (link:find "^https?://")
@@ -139,10 +144,9 @@
               true))
 
           (jump-to-target link)))
-      (async.void)))
+      (async.void true)))
 
-
-(fn open-hyperlink-at-cursor-async []
+(fn open-hyperlink-at-cursor []
   (local node (ts.find-parent-node-of-type (ts.get-node-at-cursor)
                                            [:link :short_link :link_definition]))
   (when node
@@ -153,4 +157,4 @@
       (open-link-async link))))
 
 
-{: open-hyperlink-at-cursor-async}
+{: open-hyperlink-at-cursor}

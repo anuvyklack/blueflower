@@ -7,8 +7,7 @@
    :augroup (vim.api.nvim_create_augroup "blueflower" {:clear true})
    :open_in_external_app ["pdf" "png" "jpeg" "jpg" "doc" "docx"]
    :link_abbreviations {}
-   ; :link_definition_behavior "pass" ; "stick"
-   :link_definition_behavior "stick"
+   :link_definition_behavior "stick" ; "pass"
    })
 
 (fn Config.setup [self ?input]

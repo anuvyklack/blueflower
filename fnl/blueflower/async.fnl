@@ -22,10 +22,9 @@
   ;;
   ;; We need to handle both.
   (let [thread (coroutine.running)]
-    ; (if (and thread (. handles thread))
-    ;   true)
-    (and thread (. handles thread))
-    ))
+    (if (and thread (. handles thread))
+        true
+        false)))
 
 (local Async_T {})
 
@@ -257,7 +256,7 @@
     (fun (unpack args))))
 
 
-{:running running?
+{:running? running?
  : run
  : wait
  : create

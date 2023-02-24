@@ -31,18 +31,18 @@ local function notify_warning(message)
   end
   return vim.schedule(_4_)
 end
-local function merge_table_deep_21(t_into, t_from)
+local function merge_table_deep_21(tbl_into, t_from)
   for key, value in pairs(t_from) do
     local _5_ = type(value)
     if (_5_ == "table") then
-      t_into[key] = merge_table_deep_21(t_into[key], value)
+      tbl_into[key] = merge_table_deep_21(tbl_into[key], value)
     elseif true then
       local _ = _5_
-      t_into[key] = t_from[key]
+      tbl_into[key] = t_from[key]
     else
     end
   end
-  return t_into
+  return tbl_into
 end
 local function make_set_from_list(list)
   local set_ = {}
