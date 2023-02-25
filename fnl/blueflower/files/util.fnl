@@ -5,11 +5,12 @@
 (local config (require :blueflower.config))
 (local {: executable? : has? : notify-error} (require :blueflower.util))
 (local {: fnamemodify} vim.fn)
-(local await {:fs_open  (async.wrap uv.fs_open 4)
-              :fs_fstat (async.wrap uv.fs_fstat 2)
-              :fs_read  (async.wrap uv.fs_read 4)
-              :fs_close (async.wrap uv.fs_close 2)
-              :job      (async.wrap (require :blueflower.job) 1)})
+(local await {:fs_access (async.wrap uv.fs_access 3 true)
+              :fs_open   (async.wrap uv.fs_open 4)
+              :fs_fstat  (async.wrap uv.fs_fstat 2)
+              :fs_read   (async.wrap uv.fs_read 4)
+              :fs_close  (async.wrap uv.fs_close 2)
+              :job       (async.wrap (require :blueflower.job) 1)})
 
 
 (fn read-file [path]
@@ -45,7 +46,9 @@
             - STAT : table
                   See: uv.fs_stat()
         "
-        (match-try   (await.fs_open path "r" 292) ; 292 is 444 in octal
+        (print "read-file-async")
+        (match-try   (await.fs_access path "R")
+          (nil true) (await.fs_open path "r" 292) ; 292 is 444 in octal
           (nil fd)   (await.fs_fstat fd)
           (nil stat) (await.fs_read fd  stat.size  0)
           (nil data) (await.fs_close fd)

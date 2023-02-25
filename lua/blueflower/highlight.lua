@@ -46,7 +46,7 @@ end
 highlight.set("@bf.verbatim", {fg = _8_, default = true})
 highlight.set("@bf.tag", {link = "Comment", default = true})
 highlight.set("@bf.hashtag", {link = "Constant", default = true})
-highlight.set("@bf.tag.code.language", {link = "Constant", default = true})
+highlight.set("@bf.tag.code.language", {link = "Comment", default = true})
 highlight.set("@bf.tag.code", {link = "@bf.token.code_block", default = true})
 highlight.set("@bf.tag.end.code", {link = "@bf.tag.code", default = true})
 highlight.set("@bf.inline_tag", {link = "Constant", default = true})

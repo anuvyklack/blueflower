@@ -210,9 +210,8 @@
     (name)  @bf.directive.name.definition
     (token) @bf.directive.name.definition
     (content) @bf.directive.content.definition)* @bf.directive.definition
-  term_open: (token) @bf.token.definition.term
-  (term) @bf.directive.term
-  term_close: (token) @bf.token.definition.term
+  (term) @bf.definition.term
+  description_begin: (token) @bf.token.definition.begin
   (description) @bf.definition.description
   description_end: (token) @bf.token.definition.end
   )

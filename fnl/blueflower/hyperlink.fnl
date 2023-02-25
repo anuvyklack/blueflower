@@ -1,7 +1,6 @@
 (local {: nvim_buf_get_name : nvim_win_set_cursor} vim.api)
 (local async (require :blueflower.async))
 (local {: go-to-node &as ts} (require :blueflower.treesitter))
-(local {: get-node-text} vim.treesitter.query)
 (local scandir-async (require :blueflower.files.scandir))
 (local {: os-sep &as config} (require :blueflower.config))
 (local {: getcwd : fnamemodify} vim.fn)
@@ -48,7 +47,7 @@
                   (string.gsub "%s+"  " ")
                   (vim.trim))
         file (get-current-file)
-        headings (file:get-headings)]
+        headings (file:get-headings true)]
     (var found-title nil)
     (each [_ h (ipairs (. headings level)) &until found-title]
       (when (= title h.title)

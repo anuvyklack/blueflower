@@ -26,6 +26,9 @@
     (if (not= file "")
         file)))
 
+(fn Buffer.set-name [self name]
+  (api.nvim_buf_set_name self.id name))
+
 (fn Buffer.delete [self {: force : unload}]
   (api.nvim_buf_delete self.id {:force  (or force false)
                                 :unload (or unload false)}))
@@ -57,7 +60,7 @@
 (fn Buffer.get-lines [self start end ?strict-indexing]
   (api.nvim_buf_get_lines self.id start end (or ?strict-indexing false)))
 
-(fn Buffer.set-lines [{: id} start end lines ?strict-indexing]
+(fn Buffer.set-lines [self start end lines ?strict-indexing]
   "Parameters:
       - START : integer
             First line index
@@ -68,11 +71,7 @@
       - STRICT-INDEXING : boolean?
             Whether out-of-bounds should be an error.
   "
-  (api.nvim_buf_set_lines id
-                          start
-                          end
-                          (or ?strict-indexing false)
-                          lines))
+  (api.nvim_buf_set_lines self.id start end (or ?strict-indexing false) lines))
 
 (fn Buffer.add-higlight [self ns-id hl-group line col-start col-end]
   "Parameters:
@@ -94,6 +93,9 @@
                               line
                               col-start
                               col-end))
+
+(fn Buffer.set-extmark [self namespace-id line col opts]
+  (api.nvim_buf_set_extmark self.id namespace-id line col opts))
 
 Buffer
 

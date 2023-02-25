@@ -1,3 +1,4 @@
+(local uv vim.loop)
 (local async (require :blueflower.async))
 (local {: class : full-path : notify-error-once} (require :blueflower.util))
 (local Buffer (require :blueflower.api-wrappers.buffer))
@@ -20,7 +21,7 @@
           (fn [{:file filename :buf bufnr}]
             (local buffer (Buffer:new bufnr))
             (local path (buffer:get-name))
-            (when path
+            (when (and path (uv.fs_access path "R"))
               (tset files path (File:new {: path : buffer}))
               (autocmd "BufUnload"
                        {:buffer bufnr

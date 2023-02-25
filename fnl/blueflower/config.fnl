@@ -8,7 +8,19 @@
    :open_in_external_app ["pdf" "png" "jpeg" "jpg" "doc" "docx"]
    :link_abbreviations {}
    :link_definition_behavior "stick" ; "pass"
-   })
+   :concealcursor true
+   :icons {:list "•"
+           :checkbox {
+                      :done "󰸞"
+                      :cancelled ""
+                      :urgent ""
+                      ; :uncertain ""
+                      :half "•"
+                      ; :half "󱎫" ; U+f13ab: Material Design Icons
+                      ; :half "" ; U+e425: Material Icons
+                      ; :half ""
+                      ; :half ""
+                      }}})
 
 (fn Config.setup [self ?input]
   (when (not initialized)

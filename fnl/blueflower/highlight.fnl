@@ -41,7 +41,7 @@
 
 (hl "@bf.tag"         {:link :Comment})
 (hl "@bf.hashtag"     {:link :Constant})
-(hl "@bf.tag.code.language" {:link  :Constant})
+(hl "@bf.tag.code.language" {:link  :Comment})
 (hl "@bf.tag.code"          {:link  "@bf.token.code_block"})
 (hl "@bf.tag.end.code"      {:link  "@bf.tag.code"})
 
@@ -74,17 +74,9 @@
 
 ;; Links {{{
 
-; @bf.link
-; @bf.link.label
-; @bf.link.reference
-; @bf.link.short_reference
-; @bf.link.reference_definition
-; @bf.link.target
-; @bf.token.link.reference_definition
-
 (hl "@bf.link"                      {:link  :markdownURL})
 (hl "@bf.link.label"                {:link  :markdownLinkText})
-(hl "@bf.link.target"               {:fg (. (get-hl :Comment) :fg)})
+(hl "@bf.link.target"               {:fg    (. (get-hl :Comment) :fg)})
 (hl "@bf.link.reference"            {:link  "@bf.link.target"})
 (hl "@bf.link.short_reference"      {:link  "@bf.link.label"})
 (hl "@bf.link.reference_definition" {:link  "@bf.link.label"})

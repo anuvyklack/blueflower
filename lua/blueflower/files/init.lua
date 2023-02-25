@@ -1,3 +1,4 @@
+local uv = vim.loop
 local async = require("blueflower.async")
 local _local_1_ = require("blueflower.util")
 local class = _local_1_["class"]
@@ -20,7 +21,7 @@ local function _7_(_5_)
   local bufnr = _arg_6_["buf"]
   local buffer = Buffer:new(bufnr)
   local path = buffer["get-name"](buffer)
-  if path then
+  if (path and uv.fs_access(path, "R")) then
     files[path] = File:new({path = path, buffer = buffer})
     local function _8_()
       do

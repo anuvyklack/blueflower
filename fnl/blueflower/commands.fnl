@@ -2,7 +2,8 @@
 (local async (require :blueflower.async))
 (local config (require :blueflower.config))
 (local scandir-async (require :blueflower.files.scandir))
-(local {: get-current-file} (require :blueflower.files))
+(local {: files : get-current-file} (require :blueflower.files))
+(local {: show-outline} (require :blueflower.outline))
 (local P vim.pretty_print)
 
 (macro command [name cmd ?opts]
@@ -23,22 +24,9 @@
 
 (command :BlueflowerFiles
          (fn []
-           ; (P files)
-           (let [file (get-current-file)]
-             (file:get-headings))))
+           (P files)
+           ; (let [file (get-current-file)]
+           ;   (file:get-headings))
+           ))
 
-; (command :BlueflowerFiles
-;          (fn []
-;            ; (P files)
-;            (let [{: buffer : tstree &as file} (. files (vim.api.nvim_buf_get_name 0))
-;                  root (tstree:root)
-;                  query "(directive
-;                           (name) @name
-;                           (#eq? @name \"label\")
-;                           (content) @content) @label"
-;                  ts-query (file:ts-query query)]
-;              (P ts-query.captures)
-;              (each [id node metadata (ts-query:iter_matches root buffer.id)]
-;                (P id node metadata))
-;              )
-;            ))
+(command :BlueflowerOutline show-outline)

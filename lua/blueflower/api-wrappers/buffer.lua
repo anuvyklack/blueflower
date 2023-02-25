@@ -34,6 +34,9 @@ Buffer["get-name"] = function(self)
     return nil
   end
 end
+Buffer["set-name"] = function(self, name)
+  return api.nvim_buf_set_name(self.id, name)
+end
 Buffer.delete = function(self, _7_)
   local _arg_8_ = _7_
   local force = _arg_8_["force"]
@@ -64,12 +67,13 @@ end
 Buffer["get-lines"] = function(self, start, _end, _3fstrict_indexing)
   return api.nvim_buf_get_lines(self.id, start, _end, (_3fstrict_indexing or false))
 end
-Buffer["set-lines"] = function(_9_, start, _end, lines, _3fstrict_indexing)
-  local _arg_10_ = _9_
-  local id = _arg_10_["id"]
-  return api.nvim_buf_set_lines(id, start, _end, (_3fstrict_indexing or false), lines)
+Buffer["set-lines"] = function(self, start, _end, lines, _3fstrict_indexing)
+  return api.nvim_buf_set_lines(self.id, start, _end, (_3fstrict_indexing or false), lines)
 end
 Buffer["add-higlight"] = function(self, ns_id, hl_group, line, col_start, col_end)
   return api.nvim_buf_add_highlight(self.id, ns_id, hl_group, line, col_start, col_end)
+end
+Buffer["set-extmark"] = function(self, namespace_id, line, col, opts)
+  return api.nvim_buf_set_extmark(self.id, namespace_id, line, col, opts)
 end
 return Buffer

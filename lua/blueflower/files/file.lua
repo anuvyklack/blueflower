@@ -82,6 +82,9 @@ File.refresh = function(self)
     end
   end
 end
+File["get-node-text"] = function(self, node, concat_3f)
+  return get_node_text(node, (self.bufnr or self.content), {concat = (concat_3f or false)})
+end
 File["parse-query"] = function(self, query)
   local query0 = query:gsub("\n?%s", " ")
   local ts_query
@@ -105,7 +108,7 @@ File["get-ids"] = function(self)
     local _1 = _each_20_[1]
     local content_node = _each_20_[2]
     local id_node = _each_20_[3]
-    local id_text = get_node_text(content_node, source, {concat = true})
+    local id_text = self["get-node-text"](self, content_node, "concat")
     do end (output)[id_text] = id_node
   end
   return output
@@ -122,39 +125,60 @@ File["get-link-definitions"] = function(self)
     local label_node = _each_22_[1]
     local target_node = _each_22_[2]
     local link_def_node = _each_22_[3]
-    local label = get_node_text(label_node, source, {concat = true})
-    local link = get_node_text(target_node, source, {concat = true})
+    local label = self["get-node-text"](self, label_node, "concat")
+    local link = self["get-node-text"](self, target_node, "concat")
     local line_num = (link_def_node:start() + 1)
     do end (output)[label] = {link = link, ["line-num"] = line_num}
   end
   return output
 end
-File["get-headings"] = function(self)
+File["get-headings"] = function(self, sort_3f)
   self:refresh()
   local output = {}
   local source = (self.bufnr or self.content)
   local root = (self.tstree):root()
   local query = "(heading) @heading"
   local ts_query = self["parse-query"](self, query)
-  for _, _23_, _0 in ts_query:iter_matches(root, source) do
-    local _each_24_ = _23_
-    local h_node = _each_24_[1]
-    local _let_25_ = h_node:field("level")
-    local level_node = _let_25_[1]
+  for _, h_node, _0 in ts_query:iter_captures(root, source) do
+    local _let_23_ = h_node:field("level")
+    local level_node = _let_23_[1]
     local _1, start, _2, stop = level_node:range()
     local level = (stop - start)
-    if not output[level] then
-      output[level] = {}
-    else
-    end
-    local _27_
+    local entry
+    local _24_
     do
-      local _let_28_ = h_node:field("title")
-      local title_node = _let_28_[1]
-      _27_ = vim.trim(string.gsub(string.gsub(get_node_text(title_node, source, {concat = true}), "\13?\n", " "), "%s+", " "))
+      local _let_25_ = h_node:field("title")
+      local title_node = _let_25_[1]
+      _24_ = vim.trim(string.gsub(string.gsub(self["get-node-text"](self, title_node, "concat"), "\13?\n", " "), "%s+", " "))
     end
-    table.insert(output[level], {level = level, title = _27_, node = h_node})
+    entry = {level = level, title = _24_, node = h_node}
+    if sort_3f then
+      if not output[level] then
+        output[level] = {}
+      else
+      end
+      table.insert(output[level], entry)
+    else
+      table.insert(output, entry)
+    end
   end
   return output
+end
+File["get-icons-positions"] = function(self, first_row, last_row)
+  self:refresh()
+  local icons_positions = {}
+  local source = (self.bufnr or self.content)
+  local root = (self.tstree):root()
+  local query = "(list_item\n                 level: (token) @list_token)\n               (list_item\n                 checkbox: (checkbox) @checkbox\n                 (#not-eq? @checkbox \"[ ]\"))"
+  local ts_query = self["parse-query"](self, query)
+  for id, node, _ in ts_query:iter_captures(root, source, first_row, last_row) do
+    local name = ts_query.captures[id]
+    if not vim.startswith(name, "_") then
+      local start_row, start_col, end_row, end_col = node:range()
+      table.insert(icons_positions, {type = name, text = self["get-node-text"](self, node, true), ["line-num"] = start_row, ["start-col"] = start_col, ["end-col"] = end_col})
+    else
+    end
+  end
+  return icons_positions
 end
 return File
