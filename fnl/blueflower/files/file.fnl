@@ -95,7 +95,7 @@
     output))
 
 
-(fn File.get-link-definitions [self]
+(fn File.get-link-definitions [self ?node]
   (self:refresh)
   (let [output {}
         query "(link_definition
@@ -103,13 +103,12 @@
                  (target) @target) @link-definition"
         ts-query (self:parse-query query)
         source (or self.bufnr self.content)
-        root   (self.tstree:root)]
-    (each [_ [label-node target-node link-def-node] _ (ts-query:iter_matches root source)]
+        node   (or ?node (self.tstree:root))]
+    (each [_ [label-node target-node link-def-node] _ (ts-query:iter_matches node source)]
       (let [label (self:get-node-text label-node "concat")
-            link  (self:get-node-text target-node "concat")
-            line-num (+ (link-def-node:start) 1)]
+            link  (self:get-node-text target-node "concat")]
         (tset output label {: link
-                            : line-num})))
+                            :node link-def-node})))
     output))
 
 
@@ -140,7 +139,7 @@
     output))
 
 
-(fn File.get-icons-positions [self  first-row  last-row]
+(fn File.get-icons-positions [self first-row last-row]
   "Get positions of the icons to place above text for concealing."
   (self:refresh)
   (let [icons-positions {}
@@ -163,6 +162,12 @@
                                        : start-col
                                        : end-col})))
     icons-positions))
+
+
+(fn File.get-named-descendant-for-range [self start-row start-col end-row end-col]
+  (self:refresh)
+  (let [root (self.tstree:root)]
+    (root:named_descendant_for_range start-row start-col end-row end-col)))
 
 
 File

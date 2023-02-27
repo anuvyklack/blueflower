@@ -9,6 +9,7 @@ local has_3f = _local_1_["has?"]
 local notify_error = _local_1_["notify-error"]
 local _local_2_ = vim.fn
 local fnamemodify = _local_2_["fnamemodify"]
+local system = _local_2_["system"]
 local await = {fs_access = async.wrap(uv.fs_access, 3, true), fs_open = async.wrap(uv.fs_open, 4), fs_fstat = async.wrap(uv.fs_fstat, 2), fs_read = async.wrap(uv.fs_read, 4), fs_close = async.wrap(uv.fs_close, 2), job = async.wrap(require("blueflower.job"), 1)}
 local function read_file(path)
   local function _3_(...)
@@ -125,14 +126,16 @@ local function _19_(path, callback)
 end
 read_file_async = async.wrap(async.create(_19_, 2, true), 2)
 local function xdg_open(target)
+  local _local_40_ = string
+  local format = _local_40_["format"]
   if executable_3f("xdg-open") then
-    return job({cmd = "xdg-open", args = {target}})
+    return system(format("xdg-open \"%s\"", target))
   elseif executable_3f("open") then
     return job({cmd = "open", args = {target}})
-  elseif has_3f("win32") then
-    return job({cmd = "start", args = {target}})
+  elseif system(format("open \"%s\"", target)) then
+    return has_3f("win32")
   else
-    return nil
+    return system(format("start \"%s\"", target))
   end
 end
 local function open_in_vim(path, _3fline_num)
@@ -153,10 +156,10 @@ local function open_file(path, _3fline_num)
 end
 local ui_select_file_async
 local function ui_select_file_async0(files, callback)
-  local function _43_(_241)
+  local function _44_(_241)
     return fnamemodify(_241, ":~:.")
   end
-  return vim.ui.select(files, {prompt = "Choose the file", format_item = _43_}, callback)
+  return vim.ui.select(files, {prompt = "Choose the file", format_item = _44_}, callback)
 end
 ui_select_file_async = async.wrap(ui_select_file_async0, 2)
 local find_file_async
@@ -166,15 +169,15 @@ local function find_file_async0(path, fname, callback)
   local files = scandir_async(path0, {pattern = fname})
   local file
   do
-    local _44_ = #files
-    if (_44_ == 0) then
+    local _45_ = #files
+    if (_45_ == 0) then
       async.scheduler()
       notify_error(string.format("No file found! Path: \"%s\" File: \"%s\"", path0, fname))
       file = nil
-    elseif (_44_ == 1) then
+    elseif (_45_ == 1) then
       file = files[1]
     elseif true then
-      local _ = _44_
+      local _ = _45_
       file = ui_select_file_async(files)
     else
       file = nil
@@ -186,13 +189,13 @@ find_file_async = async.wrap(async.create(find_file_async0, 3, true), 3)
 local find_and_open_file_async
 local function find_and_open_file_async0(path, fname, callback)
   P("find-and-open-file-async: enter")
-  local _46_ = find_file_async(path, fname)
-  if (nil ~= _46_) then
-    local file = _46_
+  local _47_ = find_file_async(path, fname)
+  if (nil ~= _47_) then
+    local file = _47_
     async.scheduler()
     open_file(file)
     return callback(true)
-  elseif (_46_ == nil) then
+  elseif (_47_ == nil) then
     return callback(false)
   else
     return nil

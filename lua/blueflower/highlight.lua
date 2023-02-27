@@ -16,16 +16,30 @@ for i = 1, 6 do
   highlight.set(("@bf.H" .. i), {fg = _2_, bold = true, default = true})
 end
 for i = 1, 6 do
-  local _5_
+  local hl_name = ("@bf.H" .. i)
+  local background_hl_name = string.format("@bf.H%s.background", i)
+  local _let_4_ = get_hl(hl_name)
+  local bg = _let_4_["bg"]
+  local hl_group = _let_4_
+  hl_group.bg = nil
+  highlight.set(hl_name, hl_group)
+  if bg then
+    highlight.set(background_hl_name, {bg = bg, default = true})
+  else
+    highlight.set(background_hl_name, {link = "CursorLine", default = true})
+  end
+end
+for i = 1, 6 do
+  local _7_
   do
-    local t_4_ = get_hl(("@bf.H" .. i))
-    if (nil ~= t_4_) then
-      t_4_ = (t_4_).fg
+    local t_6_ = get_hl(("@bf.H" .. i))
+    if (nil ~= t_6_) then
+      t_6_ = (t_6_).fg
     else
     end
-    _5_ = t_4_
+    _7_ = t_6_
   end
-  highlight.set(("@bf.dinkus.H" .. i), {fg = _5_, default = true})
+  highlight.set(("@bf.dinkus.H" .. i), {fg = _7_, default = true})
 end
 highlight.set("@bf.TODO", {fg = (get_hl("Error")).fg, default = true})
 highlight.set("@bf.DONE", {fg = (get_hl("String")).fg, default = true})
@@ -34,16 +48,16 @@ highlight.set("@bf.bold", {bold = true, default = true})
 highlight.set("@bf.italic", {italic = true, default = true})
 highlight.set("@bf.underline", {underline = true, default = true})
 highlight.set("@bf.strikethrough", {strikethrough = true, default = true})
-local _8_
+local _10_
 do
-  local t_7_ = get_hl("String")
-  if (nil ~= t_7_) then
-    t_7_ = (t_7_).fg
+  local t_9_ = get_hl("String")
+  if (nil ~= t_9_) then
+    t_9_ = (t_9_).fg
   else
   end
-  _8_ = t_7_
+  _10_ = t_9_
 end
-highlight.set("@bf.verbatim", {fg = _8_, default = true})
+highlight.set("@bf.verbatim", {fg = _10_, default = true})
 highlight.set("@bf.tag", {link = "Comment", default = true})
 highlight.set("@bf.hashtag", {link = "Constant", default = true})
 highlight.set("@bf.tag.code.language", {link = "Comment", default = true})
@@ -53,10 +67,10 @@ highlight.set("@bf.inline_tag", {link = "Constant", default = true})
 highlight.set("@bf.inline_tag.label", {fg = (get_hl("Normal")).fg, default = true})
 highlight.set("@bf.inline_tag.content", {link = "markdownURL", default = true})
 highlight.set("@bf.inline_tag.parameters", {link = "Boolean", default = true})
-for _, _10_ in ipairs({{"undone", "Normal"}, {"done", "Type"}, {"urgent", "Error"}, {"in_progress", "WarningMsg"}, {"pending", "String"}, {"uncertain", "Boolean"}, {"discarded", "Comment"}}) do
-  local _each_11_ = _10_
-  local status = _each_11_[1]
-  local hl_group = _each_11_[2]
+for _, _12_ in ipairs({{"undone", "Normal"}, {"done", "Type"}, {"urgent", "Error"}, {"in_progress", "WarningMsg"}, {"pending", "String"}, {"uncertain", "Boolean"}, {"discarded", "Comment"}}) do
+  local _each_13_ = _12_
+  local status = _each_13_[1]
+  local hl_group = _each_13_[2]
   highlight.set(("@bf.checkbox." .. status), {fg = get_hl(hl_group).fg, default = true})
 end
 highlight.set("@bf.paragraph.list.discarded", {link = "@bf.strikethrough", default = true})

@@ -20,7 +20,9 @@
                       ; :half "" ; U+e425: Material Icons
                       ; :half ""
                       ; :half ""
-                      }}})
+                      }}
+   :highlight_headings_background true
+   })
 
 (fn Config.setup [self ?input]
   (when (not initialized)

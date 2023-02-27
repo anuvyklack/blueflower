@@ -4,7 +4,7 @@
 (local scandir-async (require :blueflower.files.scandir))
 (local config (require :blueflower.config))
 (local {: executable? : has? : notify-error} (require :blueflower.util))
-(local {: fnamemodify} vim.fn)
+(local {: fnamemodify : system} vim.fn)
 (local await {:fs_access (async.wrap uv.fs_access 3 true)
               :fs_open   (async.wrap uv.fs_open 4)
               :fs_fstat  (async.wrap uv.fs_fstat 2)
@@ -60,14 +60,18 @@
 
 
 (fn xdg-open [target]
+  (local {: format} string)
   (if (executable? "xdg-open")
-      (job {:cmd "xdg-open" :args [target]})
+      ; (job {:cmd "xdg-open" :args [target]})
+      (system (format "xdg-open \"%s\"" target))
 
       (executable? "open")
       (job {:cmd "open" :args [target]})
+      (system (format "open \"%s\"" target))
 
       (has? "win32")
-      (job {:cmd "start" :args [target]})
+      ; (job {:cmd "start" :args [target]})
+      (system (format "start \"%s\"" target))
       ; (job {:cmd "start" :args [(.. "\"" target "\"")]})
       ; (job {:cmd "rundll32.exe"
       ;       :args ["url.dll,FileProtocolHandler" target]})

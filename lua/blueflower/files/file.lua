@@ -113,22 +113,21 @@ File["get-ids"] = function(self)
   end
   return output
 end
-File["get-link-definitions"] = function(self)
+File["get-link-definitions"] = function(self, _3fnode)
   self:refresh()
   local output = {}
   local query = "(link_definition\n                 (label) @label\n                 (target) @target) @link-definition"
   local ts_query = self["parse-query"](self, query)
   local source = (self.bufnr or self.content)
-  local root = (self.tstree):root()
-  for _, _21_, _0 in ts_query:iter_matches(root, source) do
+  local node = (_3fnode or (self.tstree):root())
+  for _, _21_, _0 in ts_query:iter_matches(node, source) do
     local _each_22_ = _21_
     local label_node = _each_22_[1]
     local target_node = _each_22_[2]
     local link_def_node = _each_22_[3]
     local label = self["get-node-text"](self, label_node, "concat")
     local link = self["get-node-text"](self, target_node, "concat")
-    local line_num = (link_def_node:start() + 1)
-    do end (output)[label] = {link = link, ["line-num"] = line_num}
+    do end (output)[label] = {link = link, node = link_def_node}
   end
   return output
 end
@@ -180,5 +179,10 @@ File["get-icons-positions"] = function(self, first_row, last_row)
     end
   end
   return icons_positions
+end
+File["get-named-descendant-for-range"] = function(self, start_row, start_col, end_row, end_col)
+  self:refresh()
+  local root = (self.tstree):root()
+  return root:named_descendant_for_range(start_row, start_col, end_row, end_col)
 end
 return File

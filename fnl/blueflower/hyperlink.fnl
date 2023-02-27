@@ -1,6 +1,6 @@
 (local {: nvim_buf_get_name : nvim_win_set_cursor} vim.api)
 (local async (require :blueflower.async))
-(local {: go-to-node &as ts} (require :blueflower.treesitter))
+(local ts (require :blueflower.treesitter))
 (local scandir-async (require :blueflower.files.scandir))
 (local {: os-sep &as config} (require :blueflower.config))
 (local {: getcwd : fnamemodify} vim.fn)
@@ -60,21 +60,24 @@
             (set found-title h)))))
     (if (not found-title)
         (notify-error (.. "No section with title: " title))
-        ; (let [(row col) (found-title.node:start)]
-        ;   (nvim_win_set_cursor 0 [(+ row 1) col]))
-        (go-to-node found-title.node)
-        )))
+        (ts.go-to-node found-title.node))))
 
 
 (fn jump-to-link-definition [target]
   (let [file (get-current-file)
-        link-defs (file:get-link-definitions)
-        link-definition (. link-defs target)]
-    (if link-definition
-        (let [{: link : line-num} link-definition]
+        link-def (look-through
+                   ;either
+                   (let [node (ts.find-parent-node-of-type (ts.get-node-at-cursor)
+                                                           "section")
+                         link-definitions (file:get-link-definitions node)]
+                     (. link-definitions target))
+                   ;or
+                   (. (file:get-link-definitions) target))]
+    (if link-def
+        (let [{: link : node} link-def]
           (match config.link_definition_behavior
             "pass"  (open-link-async link)
-            "stick" (nvim_win_set_cursor 0 [line-num 0]))
+            "stick" (ts.go-to-node node))
           true)
         false)))
 
@@ -92,9 +95,7 @@
                             "definition" (. (parent:field "term") 1)
                             "tag"        (. (parent:field "content") 1))
               (row col) (target-node:start)]
-          ; (nvim_win_set_cursor 0 [(+ row 1) col])
-          (go-to-node target-node)
-          ))))
+          (ts.go-to-node target-node)))))
 
 
 (fn jump-to-target [target]

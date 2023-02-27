@@ -18,6 +18,16 @@
        :bold true}))
 
 (for [i 1 6]
+  (let [hl-name (.. "@bf.H" i)
+        background-hl-name (string.format "@bf.H%s.background" i)
+        {: bg &as hl-group} (get-hl hl-name)]
+    (set hl-group.bg nil)
+    (highlight.set hl-name hl-group)
+    (if bg
+        (hl background-hl-name {: bg})
+        (hl background-hl-name {:link "CursorLine"}))))
+
+(for [i 1 6]
   (hl (.. "@bf.dinkus.H" i)
       {:fg (-> (.. "@bf.H" i) (get-hl) (?. :fg))}))
 
@@ -44,6 +54,8 @@
 (hl "@bf.tag.code.language" {:link  :Comment})
 (hl "@bf.tag.code"          {:link  "@bf.token.code_block"})
 (hl "@bf.tag.end.code"      {:link  "@bf.tag.code"})
+
+; (hl "@bf.code_block" {:link "String"})
 
 (hl "@bf.inline_tag"  {:link :Constant})
 ; (hl "@bf.token.inline_tag.label" {})

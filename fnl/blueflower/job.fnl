@@ -61,20 +61,21 @@
         stdout (uv.new_pipe)
         stderr (uv.new_pipe)]
     (var (handle pid) (values nil nil))
-    (set (handle pid) (uv.spawn cmd
-                                {: args
-                                 :stdio [stdin stdout stderr]
-                                 : cwd}
-                                (fn [code signal]
-                                  (handle:close)
-                                  (stdout:read_stop)
-                                  (stderr:read_stop)
-                                  (close-pipes stdin stdout stderr)
-                                  (when ?callback
-                                    (?callback code
-                                               signal
-                                               (if (< 0 (length stdout-data)) stdout-data)
-                                               (if (< 0 (length stderr-data)) stderr-data))))))
+    (set (handle pid)
+         (uv.spawn cmd
+                   {: args
+                    :stdio [stdin stdout stderr]
+                    : cwd}
+                   (fn [code signal]
+                     (handle:close)
+                     (stdout:read_stop)
+                     (stderr:read_stop)
+                     (close-pipes stdin stdout stderr)
+                     (when ?callback
+                       (?callback code
+                                  signal
+                                  (if (< 0 (length stdout-data)) stdout-data)
+                                  (if (< 0 (length stderr-data)) stderr-data))))))
     (when (not handle)
       (close-pipes stdin stdout stderr)
       (error (debug.traceback (.. "Failed to spawn process: " (vim.inspect spec)))))

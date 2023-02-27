@@ -129,6 +129,11 @@
   (token) @bf.token.code_block
   . (tag_parameter) @bf.tag.code.language
   (tag_parameter)* @bf.tag.parameter
+  code: (content)  @bf.code_block
+  (token) @bf.token.code_block)
+
+(code_block
+  (token) @bf.token.code_block
   code: (content) @bf.code_block
   (token) @bf.token.code_block)
 
@@ -235,5 +240,9 @@
 
 (escaped_char
   (token) @bf.token.escaped)
+
+(escaped_char
+  (token) @conceal
+  (#set! conceal ""))
 
 ;; vim: ts=2 sts=2 sw=2 nospell fdm=marker

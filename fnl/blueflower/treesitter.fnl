@@ -2,11 +2,6 @@
 (local parsers  (require "nvim-treesitter.parsers"))
 (local Buffer   (require "blueflower/api-wrappers/buffer"))
 
-; (fn get-node-at-cursor []
-;   "Return the node under cursor."
-;   (get_node_at_cursor (vim.api.nvim_get_current_win)))
-
-;; lua P(require("nvim-treesitter.ts_utils").get_node_at_cursor(vim.api.nvim_get_current_win()):field("target"))
 
 (fn impl-find-parent-node-any-of-types [node types]
   "Supplementary function for `find-parent-node-of-type`"
@@ -33,8 +28,6 @@
     :table (impl-find-parent-node-any-of-types node (collect [_ ntype (ipairs node-type)]
                                                   ntype true))
     :string (impl-find-parent-node-of-type node node-type)))
-
-;; lua/orgmode/utils/init.lua :: utils.get_node_text
 
 
 (fn get-node-text [node ?buffer]
